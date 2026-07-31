@@ -10,7 +10,7 @@ from app.models.dataset import Dataset
 from app.repositories.dataset_repository import DatasetRepository
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.dataset import DatasetUploadResponseData
-from app.worker.tasks import process_uploaded_dataset
+
 
 MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100MB limit
 ALLOWED_EXTENSIONS = {".csv", ".xlsx"}
@@ -96,10 +96,12 @@ class DatasetService:
 
         # Queue Celery processing task
         try:
-            process_uploaded_dataset.delay(str(dataset.id))
+            from app.worker.celery_app import celery_app
+            celery_app.send_task("process_uploaded_dataset", args=[str(dataset.id)])
         except Exception:
             # Fallback if Redis/Celery queue is offline in standalone testing
             pass
+
 
         return DatasetUploadResponseData(
             dataset_id=dataset.id,
