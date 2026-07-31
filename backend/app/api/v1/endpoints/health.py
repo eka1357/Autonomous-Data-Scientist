@@ -34,7 +34,7 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> Any:
         redis_status = "down"
 
     is_healthy = db_status == "up" and redis_status == "up"
-    http_status = status.HTTP_200_OK if is_healthy else status.HTTP_530_SITE_IS_FROZEN
+    http_status = status.HTTP_200_OK if is_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
 
     return JSONResponse(
         status_code=http_status,
