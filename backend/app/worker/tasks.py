@@ -5,6 +5,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
+from app.services.ai_analysis_service import AIAnalysisService
 from app.services.profiling_service import ProfilingService
 from app.worker.celery_app import celery_app
 
@@ -17,9 +18,9 @@ def ping_task(message: str = "pong") -> dict[str, Any]:
 
 @celery_app.task(name="process_uploaded_dataset")
 def process_uploaded_dataset(dataset_id: str) -> dict[str, Any]:
-    logger.info(f"Executing profiling pipeline for dataset ID: {dataset_id}")
+    logger.info(f"Executing pipeline (profiling + AI analysis) for dataset ID: {dataset_id}")
 
-    async def _execute_profiling() -> None:
+    async def _execute_pipeline() -> None:
         db_url = (
             settings.DATABASE_URL
             or "postgresql+asyncpg://autods_user:autods_password@postgres:5432/autods_db"
@@ -31,15 +32,20 @@ def process_uploaded_dataset(dataset_id: str) -> dict[str, Any]:
 
         try:
             async with task_session_maker() as session:
-                service = ProfilingService(session)
-                await service.run_profiling(UUID(dataset_id))
+                dataset_uuid = UUID(dataset_id)
+                # 1. Profile Dataset
+                profiling_service = ProfilingService(session)
+                await profiling_service.run_profiling(dataset_uuid)
+
+                # 2. Generate AI Analysis
+                ai_service = AIAnalysisService(session)
+                await ai_service.generate_analysis(dataset_uuid)
         finally:
             await task_engine.dispose()
 
     try:
-        asyncio.run(_execute_profiling())
+        asyncio.run(_execute_pipeline())
         return {"status": "completed", "dataset_id": dataset_id}
     except Exception as exc:
-        logger.error(f"Profiling task failed for dataset '{dataset_id}': {exc}")
+        logger.error(f"Dataset pipeline failed for dataset '{dataset_id}': {exc}")
         return {"status": "failed", "dataset_id": dataset_id, "error": str(exc)}
-

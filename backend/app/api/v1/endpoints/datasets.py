@@ -8,7 +8,9 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.dataset import DatasetResponse
+from app.schemas.dataset_analysis import DatasetAnalysisResponse
 from app.schemas.dataset_profile import DatasetProfileResponse
+from app.services.ai_analysis_service import AIAnalysisService
 from app.services.dataset_service import DatasetService
 from app.services.profiling_service import ProfilingService
 
@@ -64,6 +66,26 @@ async def get_dataset_profile(
     profiling_service = ProfilingService(db)
     profile = await profiling_service.get_dataset_profile(dataset_id, current_user.id)
     data = DatasetProfileResponse.model_validate(profile).model_dump(mode="json")
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "data": data,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+@router.get("/{dataset_id}/analysis", status_code=status.HTTP_200_OK)
+async def get_dataset_analysis(
+    dataset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    ai_service = AIAnalysisService(db)
+    analysis = await ai_service.get_dataset_analysis(dataset_id, current_user.id)
+    data = DatasetAnalysisResponse.model_validate(analysis).model_dump(mode="json")
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,

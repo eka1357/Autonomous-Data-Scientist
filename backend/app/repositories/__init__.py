@@ -1,3 +1,4 @@
+from app.repositories.dataset_analysis_repository import DatasetAnalysisRepository
 from app.repositories.dataset_profile_repository import DatasetProfileRepository
 from app.repositories.dataset_repository import DatasetRepository
 from app.repositories.project_repository import ProjectRepository
@@ -8,4 +9,5 @@ __all__ = [
     "ProjectRepository",
     "DatasetRepository",
     "DatasetProfileRepository",
+    "DatasetAnalysisRepository",
 ]
