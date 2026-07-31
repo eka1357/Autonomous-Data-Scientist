@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.models.dataset_profile import DatasetProfile
     from app.models.project import Project
 
 
@@ -32,8 +33,10 @@ class Dataset(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
-
     project: Mapped["Project"] = relationship("Project", back_populates="datasets")
+    profile: Mapped["DatasetProfile | None"] = relationship(
+        "DatasetProfile", back_populates="dataset", uselist=False, cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Dataset id={self.id} filename={self.filename} status={self.status}>"

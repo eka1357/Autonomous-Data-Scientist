@@ -6,6 +6,7 @@ from app.schemas.auth import (
     UserRegisterResponseData,
 )
 from app.schemas.dataset import DatasetResponse, DatasetUploadResponseData
+from app.schemas.dataset_profile import DatasetProfileResponse
 from app.schemas.project import (
     ProjectCreateRequest,
     ProjectResponse,
@@ -25,4 +26,5 @@ __all__ = [
     "ProjectResponse",
     "DatasetResponse",
     "DatasetUploadResponseData",
+    "DatasetProfileResponse",
 ]
