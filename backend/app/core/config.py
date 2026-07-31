@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
 
     # AI & OpenAI
-    OPENAI_API_KEY: str = ""
+    OPENAI_API_KEY: str | None = None
 
     # Storage
     STORAGE_BACKEND: str = "local"

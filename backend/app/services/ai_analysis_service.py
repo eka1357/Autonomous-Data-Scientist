@@ -99,8 +99,9 @@ Return JSON with exact structure:
             from langchain_openai import ChatOpenAI
 
             llm = ChatOpenAI(
-                model="gpt-4o-mini",
+                model="openai/gpt-4o-mini",
                 api_key=settings.OPENAI_API_KEY,
+                base_url="https://openrouter.ai/api/v1",
                 temperature=0.2,
                 model_kwargs={"response_format": {"type": "json_object"}},
             )
