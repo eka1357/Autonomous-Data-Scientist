@@ -8,12 +8,16 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.models.chat_message import ChatMessage
     from app.models.dataset_analysis import DatasetAnalysis
     from app.models.dataset_cleaning import DatasetCleaning
     from app.models.dataset_eda import DatasetEDA
+    from app.models.dataset_preprocessing import DatasetPreprocessing
     from app.models.dataset_profile import DatasetProfile
+    from app.models.model_evaluation import ModelEvaluation
+    from app.models.model_training import ModelTraining
+    from app.models.prediction_history import PredictionHistory
     from app.models.project import Project
-
 
 
 class Dataset(Base):
@@ -49,6 +53,21 @@ class Dataset(Base):
     )
     eda: Mapped["DatasetEDA | None"] = relationship(
         "DatasetEDA", back_populates="dataset", uselist=False, cascade="all, delete-orphan"
+    )
+    preprocessing: Mapped["DatasetPreprocessing | None"] = relationship(
+        "DatasetPreprocessing", back_populates="dataset", uselist=False, cascade="all, delete-orphan"
+    )
+    model_training: Mapped["ModelTraining | None"] = relationship(
+        "ModelTraining", back_populates="dataset", uselist=False, cascade="all, delete-orphan"
+    )
+    evaluation: Mapped["ModelEvaluation | None"] = relationship(
+        "ModelEvaluation", back_populates="dataset", uselist=False, cascade="all, delete-orphan"
+    )
+    predictions: Mapped[list["PredictionHistory"]] = relationship(
+        "PredictionHistory", back_populates="dataset", cascade="all, delete-orphan"
+    )
+    chat_messages: Mapped[list["ChatMessage"]] = relationship(
+        "ChatMessage", back_populates="dataset", cascade="all, delete-orphan"
     )
 
 

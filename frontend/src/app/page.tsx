@@ -21,6 +21,15 @@ export default function Home() {
         <p className="mt-6 text-lg text-slate-400 max-w-2xl">
           Upload datasets, receive automated data cleaning proposals, EDA visualizations, AutoML benchmark comparisons, and executive reports without writing code.
         </p>
+
+        <div className="mt-8">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-600/30 transition text-sm"
+          >
+            Launch Interactive Dashboard &rarr;
+          </Link>
+        </div>
       </div>
 
       <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:grid-cols-4 lg:text-left gap-4">

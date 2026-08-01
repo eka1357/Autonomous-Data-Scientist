@@ -3,9 +3,13 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from prometheus_fastapi_instrumentator import Instrumentator
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.core.exceptions import AutoDSException, autods_exception_handler, global_exception_handler
+from app.core.limiter import limiter
 from app.core.logging import setup_logging
 
 
@@ -25,6 +29,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Slowapi rate limiter setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Prometheus metrics setup
+Instrumentator().instrument(app).expose(app)
+
 # CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
@@ -35,10 +46,10 @@ app.add_middleware(
 )
 
 # Register exception handlers
-app.add_exception_handler(AutoDSException, autods_exception_handler) # type: ignore
+app.add_exception_handler(AutoDSException, autods_exception_handler)  # type: ignore
 app.add_exception_handler(Exception, global_exception_handler)
 
 # Include API Router
 from app.api.v1.router import api_router
-app.include_router(api_router, prefix=settings.API_V1_STR)
 
+app.include_router(api_router, prefix=settings.API_V1_STR)

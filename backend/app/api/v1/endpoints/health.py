@@ -13,6 +13,7 @@ router = APIRouter()
 
 
 @router.get("/health", response_model=None)
+@router.get("/health/readiness", response_model=None)
 async def health_check(db: AsyncSession = Depends(get_db)) -> Any:
     db_status = "down"
     redis_status = "down"
@@ -45,6 +46,18 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> Any:
                 "database": db_status,
                 "redis": redis_status,
             },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+@router.get("/health/liveness", response_model=None)
+async def liveness_check() -> Any:
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "status": "alive",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     )
