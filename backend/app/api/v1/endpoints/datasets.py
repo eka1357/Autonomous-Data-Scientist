@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -9,8 +9,10 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.dataset import DatasetResponse
 from app.schemas.dataset_analysis import DatasetAnalysisResponse
+from app.schemas.dataset_cleaning import DatasetCleaningResponse
 from app.schemas.dataset_profile import DatasetProfileResponse
 from app.services.ai_analysis_service import AIAnalysisService
+from app.services.cleaning_service import CleaningService
 from app.services.dataset_service import DatasetService
 from app.services.profiling_service import ProfilingService
 
@@ -94,6 +96,63 @@ async def get_dataset_analysis(
             "data": data,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
+    )
+
+
+@router.get("/{dataset_id}/cleaning-plan", status_code=status.HTTP_200_OK)
+async def get_dataset_cleaning_plan(
+    dataset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    cleaning_service = CleaningService(db)
+    cleaning = await cleaning_service.get_cleaning_plan(dataset_id, current_user.id)
+    data = DatasetCleaningResponse.model_validate(cleaning).model_dump(mode="json")
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "data": data,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+@router.post("/{dataset_id}/clean", status_code=status.HTTP_200_OK)
+async def clean_dataset(
+    dataset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    cleaning_service = CleaningService(db)
+    cleaning = await cleaning_service.execute_stored_cleaning_plan(dataset_id, current_user.id)
+    data = DatasetCleaningResponse.model_validate(cleaning).model_dump(mode="json")
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "data": data,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+
+@router.get("/{dataset_id}/cleaned-file", status_code=status.HTTP_200_OK)
+async def get_cleaned_dataset_file(
+    dataset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FileResponse:
+    cleaning_service = CleaningService(db)
+    file_path, filename = await cleaning_service.get_cleaned_file_path(dataset_id, current_user.id)
+
+    return FileResponse(
+        path=file_path,
+        media_type="text/csv",
+        filename=filename,
     )
 
 

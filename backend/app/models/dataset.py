@@ -9,6 +9,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.dataset_analysis import DatasetAnalysis
+    from app.models.dataset_cleaning import DatasetCleaning
     from app.models.dataset_profile import DatasetProfile
     from app.models.project import Project
 
@@ -40,6 +41,9 @@ class Dataset(Base):
     )
     analysis: Mapped["DatasetAnalysis | None"] = relationship(
         "DatasetAnalysis", back_populates="dataset", uselist=False, cascade="all, delete-orphan"
+    )
+    cleaning: Mapped["DatasetCleaning | None"] = relationship(
+        "DatasetCleaning", back_populates="dataset", uselist=False, cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
