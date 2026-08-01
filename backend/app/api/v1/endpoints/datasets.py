@@ -10,11 +10,14 @@ from app.models.user import User
 from app.schemas.dataset import DatasetResponse
 from app.schemas.dataset_analysis import DatasetAnalysisResponse
 from app.schemas.dataset_cleaning import DatasetCleaningResponse
+from app.schemas.dataset_eda import DatasetEDAResponse
 from app.schemas.dataset_profile import DatasetProfileResponse
 from app.services.ai_analysis_service import AIAnalysisService
 from app.services.cleaning_service import CleaningService
 from app.services.dataset_service import DatasetService
+from app.services.eda_service import EDAService
 from app.services.profiling_service import ProfilingService
+
 
 router = APIRouter()
 
@@ -156,6 +159,42 @@ async def get_cleaned_dataset_file(
     )
 
 
+@router.get("/{dataset_id}/eda", status_code=status.HTTP_200_OK)
+async def get_dataset_eda(
+    dataset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    eda_service = EDAService(db)
+    eda = await eda_service.get_eda(dataset_id, current_user.id)
+    data = DatasetEDAResponse.model_validate(eda).model_dump(mode="json")
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "data": data,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+@router.get("/{dataset_id}/eda-report", status_code=status.HTTP_200_OK)
+async def get_dataset_eda_report(
+    dataset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FileResponse:
+    eda_service = EDAService(db)
+    file_path, filename = await eda_service.get_eda_report_path(dataset_id, current_user.id)
+
+    return FileResponse(
+        path=file_path,
+        media_type="text/html",
+        filename=filename,
+    )
+
+
 @router.delete("/{dataset_id}", status_code=status.HTTP_200_OK)
 async def delete_dataset(
     dataset_id: UUID,
@@ -173,3 +212,4 @@ async def delete_dataset(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     )
+

@@ -8,6 +8,7 @@ from app.schemas.auth import (
 from app.schemas.dataset import DatasetResponse, DatasetUploadResponseData
 from app.schemas.dataset_analysis import DatasetAnalysisResponse
 from app.schemas.dataset_cleaning import CleanDatasetRequest, DatasetCleaningResponse
+from app.schemas.dataset_eda import DatasetEDAResponse
 from app.schemas.dataset_profile import DatasetProfileResponse
 from app.schemas.project import (
     ProjectCreateRequest,
@@ -31,5 +32,7 @@ __all__ = [
     "DatasetProfileResponse",
     "DatasetAnalysisResponse",
     "DatasetCleaningResponse",
+    "DatasetEDAResponse",
     "CleanDatasetRequest",
 ]
+

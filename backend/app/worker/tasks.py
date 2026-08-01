@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.config import settings
 from app.services.ai_analysis_service import AIAnalysisService
 from app.services.cleaning_service import CleaningService
+from app.services.eda_service import EDAService
 from app.services.profiling_service import ProfilingService
 from app.worker.celery_app import celery_app
 
@@ -19,7 +20,7 @@ def ping_task(message: str = "pong") -> dict[str, Any]:
 
 @celery_app.task(name="process_uploaded_dataset")
 def process_uploaded_dataset(dataset_id: str) -> dict[str, Any]:
-    logger.info(f"Executing pipeline (profiling + AI analysis + AI cleaning) for dataset ID: {dataset_id}")
+    logger.info(f"Executing pipeline (profiling + AI analysis + cleaning + EDA) for dataset ID: {dataset_id}")
 
     async def _execute_pipeline() -> None:
         db_url = (
@@ -46,8 +47,13 @@ def process_uploaded_dataset(dataset_id: str) -> dict[str, Any]:
                 # 3. Generate & Execute AI Cleaning Plan
                 cleaning_service = CleaningService(session)
                 await cleaning_service.generate_and_execute_cleaning(dataset_uuid)
+
+                # 4. Generate Exploratory Data Analysis (EDA) & Charts
+                eda_service = EDAService(session)
+                await eda_service.run_eda(dataset_uuid)
         finally:
             await task_engine.dispose()
+
 
     try:
         asyncio.run(_execute_pipeline())
