@@ -12,7 +12,7 @@ interface EDATabProps {
 export const EDATab: React.FC<EDATabProps> = ({ datasetId, eda }) => {
   if (!eda) {
     return (
-      <div className="panel-card p-12 text-center text-slate-500 text-sm">
+      <div className="glass-card rounded-2xl p-12 text-center text-slate-400 text-sm">
         Exploratory Data Analysis (EDA) has not been run yet.
       </div>
     );
@@ -25,13 +25,13 @@ export const EDATab: React.FC<EDATabProps> = ({ datasetId, eda }) => {
   return (
     <div className="space-y-6">
       {/* Header & Report Download */}
-      <div className="panel-card p-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-blue-600" />
+          <h2 className="text-base font-semibold text-white flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-blue-400" />
             Exploratory Data Analysis (EDA) & Outliers
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             IQR outlier bounds, statistical moments, and correlation discovery.
           </p>
         </div>
@@ -40,7 +40,7 @@ export const EDATab: React.FC<EDATabProps> = ({ datasetId, eda }) => {
           href={api.getEDAReportUrl(datasetId)}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-md shadow-blue-600/20"
         >
           <Download className="w-3.5 h-3.5" />
           Download EDA HTML Report
@@ -49,23 +49,24 @@ export const EDATab: React.FC<EDATabProps> = ({ datasetId, eda }) => {
 
       {/* Summary Card */}
       {summary && (
-        <div className="panel-card p-5 space-y-2">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Executive Overview</h3>
-          <p className="text-xs text-slate-700 leading-relaxed">{summary}</p>
+        <div className="glass-card rounded-2xl p-5 space-y-2">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Executive Overview</h3>
+          <p className="text-sm text-slate-200 leading-relaxed font-normal">{summary}</p>
         </div>
       )}
 
       {/* Insights */}
       {insights.key_findings && (
-        <div className="panel-card p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-            <Eye className="w-4 h-4 text-blue-600" />
-            Key Exploratory Findings
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Eye className="w-4 h-4 text-purple-400" />
+            Key Statistical Findings
           </h3>
           <ul className="space-y-2">
-            {insights.key_findings.map((item: string, idx: number) => (
-              <li key={idx} className="p-2.5 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-700">
-                {item}
+            {insights.key_findings.map((f: string, idx: number) => (
+              <li key={idx} className="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800 flex items-start gap-2">
+                <span className="text-purple-400 font-bold">•</span>
+                <span>{f}</span>
               </li>
             ))}
           </ul>
@@ -73,34 +74,38 @@ export const EDATab: React.FC<EDATabProps> = ({ datasetId, eda }) => {
       )}
 
       {/* Outliers Table */}
-      <div className="panel-card p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-          <AlertOctagon className="w-4 h-4 text-amber-600" />
-          IQR Outlier Detection Summary
+      <div className="glass-card rounded-2xl p-6 space-y-4">
+        <h3 className="text-base font-bold text-white flex items-center gap-2">
+          <AlertOctagon className="w-4 h-4 text-amber-400" />
+          Interquartile Range (IQR) Outliers Detected
         </h3>
-        <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-800">
               <tr>
-                <th className="px-4 py-2.5">Numeric Feature</th>
-                <th className="px-4 py-2.5">Outlier Count</th>
-                <th className="px-4 py-2.5">Outlier %</th>
-                <th className="px-4 py-2.5">IQR Bounds [Lower, Upper]</th>
+                <th className="px-4 py-3">Column</th>
+                <th className="px-4 py-3">Outlier Count</th>
+                <th className="px-4 py-3">Lower Bound</th>
+                <th className="px-4 py-3">Upper Bound</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {Object.entries(outliers).map(([col, meta]: [string, any]) => (
-                <tr key={col} className="hover:bg-slate-50 transition">
-                  <td className="px-4 py-2.5 font-medium text-slate-900">{col}</td>
-                  <td className="px-4 py-2.5">{meta.outlier_count ?? 0}</td>
-                  <td className="px-4 py-2.5 font-semibold text-amber-700">
-                    {meta.outlier_percentage ?? 0}%
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-slate-500">
-                    [{meta.lower_bound}, {meta.upper_bound}]
+            <tbody className="divide-y divide-slate-800/60">
+              {Object.keys(outliers).length > 0 ? (
+                Object.entries(outliers).map(([col, data]: [string, any]) => (
+                  <tr key={col} className="hover:bg-slate-800/40 transition">
+                    <td className="px-4 py-3 font-semibold text-white">{col}</td>
+                    <td className="px-4 py-3 font-bold text-amber-400">{data.count || 0}</td>
+                    <td className="px-4 py-3 font-mono text-slate-400">{data.lower_bound ?? "-"}</td>
+                    <td className="px-4 py-3 font-mono text-slate-400">{data.upper_bound ?? "-"}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
+                    No extreme IQR outliers detected in numerical columns.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -108,4 +113,3 @@ export const EDATab: React.FC<EDATabProps> = ({ datasetId, eda }) => {
     </div>
   );
 };
-

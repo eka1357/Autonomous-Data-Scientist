@@ -1,4 +1,5 @@
 import math
+import re
 from typing import Any
 import numpy as np
 import pandas as pd
@@ -14,6 +15,33 @@ def _sanitize_value(val: Any) -> Any:
     if isinstance(val, (int, np.integer)):
         return int(val)
     return str(val)
+
+
+def clean_and_coerce_numeric_columns(df: pd.DataFrame, coercion_threshold: float = 0.5) -> pd.DataFrame:
+    """
+    Strips currency symbols ($ € £ ¥ etc.), commas, and whitespace from object columns
+    and attempts numeric coercion with pd.to_numeric(errors='coerce').
+    Only keeps a column as numeric if coercion succeeds for at least coercion_threshold of values.
+    """
+    df_cleaned = df.copy()
+    for col in df_cleaned.columns:
+        col_series = df_cleaned[col]
+        if pd.api.types.is_object_dtype(col_series) or isinstance(col_series.dtype, pd.CategoricalDtype):
+            s_str = col_series.astype(str).str.strip()
+            # Strip currency symbols $, €, £, ¥, commas, and whitespace
+            cleaned_s = s_str.str.replace(r"[\$,£€¥\s]", "", regex=True)
+
+            numeric_s = pd.to_numeric(cleaned_s, errors="coerce")
+
+            # Count valid original entries (excluding nulls / empty / nan representations)
+            valid_orig_mask = col_series.notna() & (~s_str.isin(["", "nan", "None", "null", "NaN", "N/A", "n/a"]))
+            valid_orig_count = int(valid_orig_mask.sum())
+
+            if valid_orig_count > 0:
+                coerced_count = int(numeric_s[valid_orig_mask].notna().sum())
+                if (coerced_count / valid_orig_count) >= coercion_threshold:
+                    df_cleaned[col] = numeric_s
+    return df_cleaned
 
 
 def profile_csv_file(file_path: str) -> dict[str, Any]:
@@ -32,7 +60,10 @@ def profile_csv_file(file_path: str) -> dict[str, Any]:
     if df is None:
         raise ValueError(f"Failed to read CSV file with supported encodings: {last_err}")
 
-    # 2. Computations
+    # 2. Strip currency symbols, commas, and whitespace & coerce numeric columns BEFORE inferring dtypes
+    df = clean_and_coerce_numeric_columns(df)
+
+    # 3. Computations (re-run AFTER cleaning step)
     row_count = int(len(df))
     column_count = int(len(df.columns))
     column_names = [str(c) for c in df.columns]
@@ -40,7 +71,7 @@ def profile_csv_file(file_path: str) -> dict[str, Any]:
     missing_values = {str(c): int(df[c].isna().sum()) for c in df.columns}
     duplicate_row_count = int(df.duplicated().sum())
 
-    # 3. Numeric Summary Statistics
+    # 4. Numeric Summary Statistics
     numeric_df = df.select_dtypes(include=["number"])
     summary_stats: dict[str, dict[str, Any]] = {}
 

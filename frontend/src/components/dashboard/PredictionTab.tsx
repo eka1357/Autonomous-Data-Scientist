@@ -43,106 +43,99 @@ export const PredictionTab: React.FC<PredictionTabProps> = ({
     <div className="space-y-6">
       {/* Inline Error Banner */}
       {errorMessage && (
-        <div className="p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between gap-3 text-xs text-red-700 font-medium">
+        <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-3 text-xs text-red-400 font-medium">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700 underline text-xs">
+          <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-red-300 underline text-xs">
             Dismiss
           </button>
         </div>
       )}
 
       {/* Header */}
-      <div className="panel-card p-5">
-        <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          Model Prediction & Inference Interface
+      <div className="glass-card rounded-2xl p-5">
+        <h2 className="text-base font-semibold text-white flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-blue-400" />
+          Model Prediction & Inference Service
         </h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Execute single feature inference or batch predictions against trained model binaries.
+        <p className="text-xs text-slate-400 mt-0.5">
+          Execute single feature JSON inferences or view historical batch prediction records.
         </p>
       </div>
 
-      {/* Inference Form */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="panel-card p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-900">Single Prediction Input (JSON Format)</h3>
+      {/* Single Prediction Form */}
+      <div className="glass-card rounded-2xl p-5 space-y-4">
+        <h3 className="text-sm font-bold text-white">Single Sample Inference</h3>
+
+        <div className="space-y-2">
+          <label className="text-xs text-slate-400 font-medium">Feature Inputs (JSON format)</label>
           <textarea
+            rows={4}
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
-            rows={5}
-            className="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 font-mono text-xs text-slate-800 focus:outline-none focus:border-blue-600"
-            placeholder='{"feature1": 1.0, "feature2": 2.0}'
+            className="w-full p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-blue-300 font-mono focus:outline-none focus:border-blue-500 transition"
           />
-          <button
-            onClick={handlePredictSingle}
-            disabled={loading || !datasetId}
-            className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50 cursor-pointer"
-          >
-            <Send className="w-3.5 h-3.5" />
-            {loading ? "Predicting..." : "Execute Prediction"}
-          </button>
         </div>
 
-        {/* Prediction Result Display */}
-        <div className="panel-card p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-900">Inference Output</h3>
-          {singleResult ? (
-            <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200 space-y-2">
-              <div className="flex items-center gap-2 text-emerald-800 text-xs font-semibold uppercase">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Prediction Completed
-              </div>
-              <p className="text-xl font-bold text-slate-900">
-                Result: {String(singleResult.output_summary?.prediction ?? "N/A")}
-              </p>
-              <pre className="text-xs font-mono text-slate-700 overflow-x-auto bg-white p-3 rounded border border-slate-200">
-                {JSON.stringify(singleResult, null, 2)}
-              </pre>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-lg">
-              Prediction results will appear here after execution.
-            </div>
-          )}
-        </div>
+        <button
+          onClick={handlePredictSingle}
+          disabled={loading || !datasetId}
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
+        >
+          <Send className="w-3.5 h-3.5" />
+          {loading ? "Predicting..." : "Execute Prediction"}
+        </button>
+
+        {singleResult && (
+          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+            <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4" />
+              Prediction Completed Successfully
+            </span>
+            <p className="text-slate-300 font-mono pt-1">
+              Result: <strong className="text-white">{JSON.stringify(singleResult.output_summary)}</strong>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Prediction History Table */}
-      <div className="panel-card p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-900">Prediction History Log</h3>
-        <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+      <div className="glass-card rounded-2xl p-6 space-y-4">
+        <h3 className="text-base font-bold text-white">Prediction History Log</h3>
+        <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-800">
               <tr>
-                <th className="px-4 py-2.5">Timestamp</th>
-                <th className="px-4 py-2.5">Type</th>
-                <th className="px-4 py-2.5">Input Summary</th>
-                <th className="px-4 py-2.5">Output Summary</th>
-                <th className="px-4 py-2.5">Actions</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Input Summary</th>
+                <th className="px-4 py-3">Output Summary</th>
+                <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {history && history.length > 0 ? (
-                history.map((h: any) => (
-                  <tr key={h.id} className="hover:bg-slate-50 transition">
-                    <td className="px-4 py-2.5 font-mono text-slate-500">
-                      {new Date(h.created_at).toLocaleString()}
+            <tbody className="divide-y divide-slate-800/60">
+              {history.length > 0 ? (
+                history.map((h: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-slate-800/40 transition">
+                    <td className="px-4 py-3 font-semibold text-white uppercase">{h.prediction_type}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {h.status}
+                      </span>
                     </td>
-                    <td className="px-4 py-2.5 uppercase font-semibold text-blue-700">{h.prediction_type}</td>
-                    <td className="px-4 py-2.5 font-mono text-slate-600">{JSON.stringify(h.input_summary)}</td>
-                    <td className="px-4 py-2.5 font-mono text-emerald-700">{JSON.stringify(h.output_summary)}</td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-3 font-mono text-slate-400">{JSON.stringify(h.input_summary)}</td>
+                    <td className="px-4 py-3 font-mono text-blue-400">{JSON.stringify(h.output_summary)}</td>
+                    <td className="px-4 py-3">
                       {h.result_file_path && (
                         <a
                           href={api.getPredictionDownloadUrl(h.id)}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-600 hover:underline font-medium"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
                         >
-                          <Download className="w-3.5 h-3.5" />
+                          <Download className="w-3 h-3 text-slate-400" />
                           Download CSV
                         </a>
                       )}
@@ -151,8 +144,8 @@ export const PredictionTab: React.FC<PredictionTabProps> = ({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                    No prediction history recorded yet.
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                    No predictions recorded yet. Execute single or batch inference to generate logs.
                   </td>
                 </tr>
               )}

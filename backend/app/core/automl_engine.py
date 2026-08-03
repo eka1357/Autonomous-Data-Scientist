@@ -43,12 +43,22 @@ def detect_problem_type(
     ):
         return problem_type_override.lower(), target_col
 
-    if not target_col or target_col not in df.columns:
+    # Always ensure numeric coercion is performed before inspecting dtypes & cardinality
+    from app.core.profiler import clean_and_coerce_numeric_columns
+    coerced_df = clean_and_coerce_numeric_columns(df)
+
+    if not target_col or target_col not in coerced_df.columns:
         return "clustering", None
 
-    y = df[target_col]
-    if pd.api.types.is_numeric_dtype(y) and y.nunique() > 15:
-        return "regression", target_col
+    y = coerced_df[target_col].dropna()
+    if y.empty:
+        return "clustering", None
+
+    # Continuous numeric with high cardinality -> regression
+    if pd.api.types.is_numeric_dtype(y):
+        unique_cnt = y.nunique()
+        if unique_cnt > 10 or (len(y) > 0 and (unique_cnt / len(y)) > 0.05):
+            return "regression", target_col
 
     return "classification", target_col
 

@@ -11,7 +11,7 @@ import { EvaluationTab } from "@/components/dashboard/EvaluationTab";
 import { PredictionTab } from "@/components/dashboard/PredictionTab";
 import { AIChatTab } from "@/components/dashboard/AIChatTab";
 import { api } from "@/lib/api";
-import { Database, Filter, BarChart3, Cpu, ShieldCheck, Sparkles, Send, Upload, Loader2 } from "lucide-react";
+import { Database, Filter, BarChart3, Cpu, ShieldCheck, Sparkles, Send, Upload, X } from "lucide-react";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -27,8 +27,8 @@ export default function DashboardPage() {
   const [predictionsHistory, setPredictionsHistory] = useState<any[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgressMsg, setUploadProgressMsg] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadProgressMsg, setUploadProgressMsg] = useState<string>("");
 
   const fetchDatasetDetails = async (id: string) => {
     if (!id) return;
@@ -54,27 +54,6 @@ export default function DashboardPage() {
       fetchDatasetDetails(datasetId);
     }
   }, [datasetId]);
-
-  // Polling for processing status if pipeline is active
-  useEffect(() => {
-    if (!datasetId || dataset?.status === "completed" || dataset?.status === "failed") return;
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await api.getDataset(datasetId);
-        if (res.data) {
-          setDataset(res.data);
-          if (res.data.status === "completed") {
-            fetchDatasetDetails(datasetId);
-          }
-        }
-      } catch (e) {
-        console.error("Polling status error:", e);
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [datasetId, dataset?.status]);
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,7 +90,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
       <DashboardHeader
         datasetId={datasetId}
         datasetName={dataset?.filename || ""}
@@ -121,7 +100,7 @@ export default function DashboardPage() {
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
         {/* Nav Tabs */}
-        <div className="flex items-center gap-1.5 border-b border-slate-200 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2 overflow-x-auto scrollbar-none">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
@@ -129,13 +108,13 @@ export default function DashboardPage() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium whitespace-nowrap transition ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                   active
-                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-semibold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/60"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5 text-slate-500" />
+                <Icon className={`w-4 h-4 ${active ? "text-white" : "text-slate-400"}`} />
                 {t.label}
               </button>
             );
@@ -189,51 +168,51 @@ export default function DashboardPage() {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md p-6 rounded-xl bg-white border border-slate-200 shadow-lg space-y-4">
-            <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-              <Upload className="w-4 h-4 text-blue-600" />
-              Upload Dataset (CSV / XLSX)
-            </h3>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Upload className="w-5 h-5 text-blue-400" />
+                Upload Dataset (CSV / XLSX)
+              </h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={handleUploadSubmit} className="space-y-4">
               <input
                 type="file"
                 accept=".csv,.xlsx"
                 onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
                 disabled={uploading}
-                className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border file:border-slate-300 file:text-xs file:font-medium file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 cursor-pointer disabled:opacity-50"
-                required
+                className="w-full text-xs text-slate-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border file:border-slate-700 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer disabled:opacity-50"
               />
 
-              {uploading && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-xs text-blue-700 font-medium">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                  <span>{uploadProgressMsg}</span>
-                </div>
+              {uploadProgressMsg && (
+                <p className="text-xs text-blue-400 font-medium animate-pulse">
+                  {uploadProgressMsg}
+                </p>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  disabled={uploading}
                   onClick={() => setShowUploadModal(false)}
-                  className="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50"
+                  disabled={uploading}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={uploading || !uploadFile}
-                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 transition flex items-center gap-1.5"
+                  disabled={!uploadFile || uploading}
+                  className="px-5 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
                 >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Upload & Process"
-                  )}
+                  {uploading ? "Uploading..." : "Start Processing"}
                 </button>
               </div>
             </form>

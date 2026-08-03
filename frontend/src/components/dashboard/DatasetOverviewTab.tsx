@@ -16,7 +16,7 @@ export const DatasetOverviewTab: React.FC<DatasetOverviewTabProps> = ({
 }) => {
   if (!dataset) {
     return (
-      <div className="panel-card p-12 text-center text-slate-500 text-sm">
+      <div className="glass-card rounded-2xl p-12 text-center text-slate-400 text-sm">
         No dataset loaded. Upload a CSV dataset to view profiling metrics.
       </div>
     );
@@ -29,93 +29,104 @@ export const DatasetOverviewTab: React.FC<DatasetOverviewTabProps> = ({
     <div className="space-y-6">
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="panel-card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center">
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
             <Database className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Total Rows</p>
-            <p className="text-xl font-semibold text-slate-900 mt-0.5">{dataset.row_count || profile?.row_count || "N/A"}</p>
+            <p className="text-xs font-medium text-slate-400">Total Rows</p>
+            <p className="text-xl font-bold text-white mt-0.5">{dataset.row_count || profile?.row_count || "N/A"}</p>
           </div>
         </div>
 
-        <div className="panel-card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Total Columns</p>
-            <p className="text-xl font-semibold text-slate-900 mt-0.5">{dataset.column_count || profile?.column_names?.length || "N/A"}</p>
+            <p className="text-xs font-medium text-slate-400">Total Columns</p>
+            <p className="text-xl font-bold text-white mt-0.5">{dataset.column_count || profile?.column_names?.length || "N/A"}</p>
           </div>
         </div>
 
-        <div className="panel-card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center">
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
             <AlertCircle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Duplicate Rows</p>
-            <p className="text-xl font-semibold text-slate-900 mt-0.5">{profile?.duplicate_row_count ?? 0}</p>
+            <p className="text-xs font-medium text-slate-400">Duplicate Rows</p>
+            <p className="text-xl font-bold text-white mt-0.5">{profile?.duplicate_row_count ?? 0}</p>
           </div>
         </div>
 
-        <div className="panel-card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
             <FileSpreadsheet className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">File Format</p>
-            <p className="text-xl font-semibold text-slate-900 mt-0.5 uppercase">{dataset.file_type || "CSV"}</p>
+            <p className="text-xs font-medium text-slate-400">File Type & Size</p>
+            <p className="text-sm font-bold text-white mt-0.5 uppercase">
+              {dataset.file_type} ({(dataset.file_size_bytes / 1024).toFixed(1)} KB)
+            </p>
           </div>
         </div>
       </div>
 
-      {/* AI Analysis Summary */}
+      {/* AI Executive Analysis Card */}
       {analysis && (
-        <div className="panel-card p-5 space-y-3">
-          <div className="flex items-center gap-2 text-slate-900 font-semibold text-sm">
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            Dataset Executive Summary & Recommended Task
+        <div className="glass-card rounded-2xl p-6 border-l-4 border-l-blue-500 space-y-3">
+          <div className="flex items-center gap-2 text-blue-400 text-sm font-semibold">
+            <Sparkles className="w-4 h-4" />
+            <span>AI Executive Analysis & Recommendation</span>
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed">{analysis.summary}</p>
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-              ML Task: <strong className="text-slate-900 capitalize">{analysis.recommended_ml_task || "Supervised Learning"}</strong>
+          <p className="text-sm text-slate-200 leading-relaxed font-normal">{analysis.summary}</p>
+          <div className="flex flex-wrap gap-4 pt-2 text-xs font-medium">
+            <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300">
+              Recommended Task: <strong className="text-white">{analysis.recommended_ml_task || "General Analysis"}</strong>
             </span>
-            <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-              Target Candidate: <strong className="text-blue-900">{analysis.target_column_candidate || "N/A"}</strong>
-            </span>
+            {analysis.target_column_candidate && (
+              <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
+                Candidate Target Column: <strong className="text-white">{analysis.target_column_candidate}</strong>
+              </span>
+            )}
           </div>
         </div>
       )}
 
-      {/* Column Details Table */}
-      <div className="panel-card p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-slate-900">Schema & Column Profile</h3>
-        <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+      {/* Schema & Missing Data Table */}
+      <div className="glass-card rounded-2xl p-6 space-y-4">
+        <h3 className="text-base font-bold text-white">Dataset Schema & Missing Values</h3>
+        <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-800">
               <tr>
-                <th className="px-4 py-2.5">Column Name</th>
-                <th className="px-4 py-2.5">Data Type</th>
-                <th className="px-4 py-2.5">Missing Cells</th>
-                <th className="px-4 py-2.5">Missing %</th>
+                <th className="px-4 py-3">Column Name</th>
+                <th className="px-4 py-3">Data Type</th>
+                <th className="px-4 py-3">Missing Values</th>
+                <th className="px-4 py-3">Completeness %</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {profile?.column_names?.map((col: string) => {
-                const count = missingValues[col] ?? 0;
-                const total = profile?.row_count || 1;
-                const pct = ((count / total) * 100).toFixed(1);
+            <tbody className="divide-y divide-slate-800/60">
+              {(profile?.column_names || []).map((col: string) => {
+                const dtype = dataTypes[col] || "unknown";
+                const missing = missingValues[col] || 0;
+                const total = dataset.row_count || profile?.row_count || 1;
+                const pct = Math.max(0, Math.min(100, ((total - missing) / total) * 100)).toFixed(1);
                 return (
-                  <tr key={col} className="hover:bg-slate-50 transition">
-                    <td className="px-4 py-2.5 font-medium text-slate-900">{col}</td>
-                    <td className="px-4 py-2.5 font-mono text-slate-600">{dataTypes[col] || "unknown"}</td>
-                    <td className="px-4 py-2.5">{count}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${count > 0 ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
-                        {pct}%
-                      </span>
+                  <tr key={col} className="hover:bg-slate-800/40 transition">
+                    <td className="px-4 py-3 font-semibold text-white">{col}</td>
+                    <td className="px-4 py-3 text-slate-400 font-mono">{dtype}</td>
+                    <td className="px-4 py-3 text-slate-400">{missing}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-blue-500 h-1.5 rounded-full"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="font-medium text-slate-300">{pct}%</span>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -127,4 +138,3 @@ export const DatasetOverviewTab: React.FC<DatasetOverviewTabProps> = ({
     </div>
   );
 };
-

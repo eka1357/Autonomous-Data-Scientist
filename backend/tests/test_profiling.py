@@ -101,3 +101,26 @@ async def test_profiling_unauthorized_access(async_client: AsyncClient, db_sessi
     # Owner B tries to access Owner A's dataset profile -> 404
     res_b = await async_client.get(f"/api/v1/datasets/{dataset_id}/profile", headers=headers_b)
     assert res_b.status_code == 404
+
+
+def test_concert_tours_numeric_coercion() -> None:
+    concert_csv_content = (
+        "Artist,Actual gross,Adjusted gross,Tour,Shows\n"
+        'Ed Sheeran,"$432,400,000","$481,200,000",Divide Tour,255\n'
+        'U2,"$736,421,584","$860,000,000",360 Tour,110\n'
+        'Guns N Roses,"$584,200,000","$620,000,000",Not in This Lifetime,158\n'
+    )
+
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".csv", delete=False, encoding="utf-8") as tmp:
+        tmp.write(concert_csv_content)
+        tmp.flush()
+        tmp_path = tmp.name
+
+    result = profile_csv_file(tmp_path)
+
+    assert result["data_types"]["Actual gross"] in ("float64", "int64")
+    assert result["data_types"]["Adjusted gross"] in ("float64", "int64")
+    assert "Actual gross" in result["summary_stats"]
+    assert "Adjusted gross" in result["summary_stats"]
+    assert result["summary_stats"]["Actual gross"]["max"] == 736421584.0
+

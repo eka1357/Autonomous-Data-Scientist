@@ -30,8 +30,14 @@ class CleaningService:
         profile_data: dict[str, Any],
         analysis_data: dict[str, Any] | None,
     ) -> str:
+        row_cnt = profile_data.get("row_count") or 0
         return f"""You are an expert Data Cleaning AI. Generate a structured JSON data cleaning plan based on the dataset profile and AI analysis below.
 Do NOT include ML preprocessing, categorical encoding (label/one-hot encoding), scaling, or normalization in this cleaning plan. Focus strictly on data cleaning operations that maintain human-readable text and numbers.
+
+Rules:
+1. Dataset total row count: {row_cnt}.
+2. If row count is under 200 rows, NEVER use "drop" row deletion strategy for missing values in fill_missing; use "median" for numeric columns, and "mode" or "Unknown" for text/categorical columns.
+3. Only drop a column entirely in drop_columns if its missing percentage is above 60%.
 
 Dataset: {filename}
 Profile: {json.dumps(profile_data)}
@@ -41,32 +47,41 @@ Return ONLY a valid JSON object matching this exact schema:
 {{
   "remove_duplicates": true,
   "trim_whitespace": true,
-  "drop_columns": ["<unwanted column 1>"],
+  "drop_columns": ["<unwanted column with >60% missing>"],
   "fill_missing": {{
-    "<column_name>": "mean" | "median" | "mode" | "drop" | "ffill" | "bfill" | "<constant_value>"
+    "<column_name>": "median" | "mean" | "mode" | "Unknown" | "drop" | "ffill" | "bfill"
   }}
 }}"""
 
     def _generate_fallback_cleaning_plan(
         self, profile_data: dict[str, Any]
     ) -> dict[str, Any]:
+        row_cnt = profile_data.get("row_count") or 0
         data_types = profile_data.get("data_types", {})
         missing_vals = profile_data.get("missing_values", {})
         dup_cnt = profile_data.get("duplicate_row_count", 0)
 
+        drop_columns: list[str] = []
         fill_missing: dict[str, str] = {}
+
         for col, missing_count in missing_vals.items():
             if missing_count > 0:
+                missing_pct = (missing_count / row_cnt) if row_cnt > 0 else 0
+                if missing_pct >= 0.60:
+                    drop_columns.append(col)
+                    continue
+
                 dtype = data_types.get(col, "")
-                if "int" in dtype or "float" in dtype:
-                    fill_missing[col] = "median"
+                is_num = "int" in dtype or "float" in dtype
+                if row_cnt < 200 or missing_pct <= 0.60:
+                    fill_missing[col] = "median" if is_num else "mode"
                 else:
-                    fill_missing[col] = "mode"
+                    fill_missing[col] = "median" if is_num else "Unknown"
 
         return {
             "remove_duplicates": dup_cnt > 0,
             "trim_whitespace": True,
-            "drop_columns": [],
+            "drop_columns": drop_columns,
             "fill_missing": fill_missing,
         }
 

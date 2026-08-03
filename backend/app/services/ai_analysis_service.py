@@ -48,7 +48,7 @@ Return JSON with exact structure:
 }}"""
 
     def _generate_fallback_analysis(
-        self, filename: str, profile_data: dict[str, Any]
+        self, filename: str, profile_data: dict[str, Any], df: Any | None = None
     ) -> dict[str, Any]:
         cols = profile_data.get("column_names", [])
         row_cnt = profile_data.get("row_count", 0)
@@ -57,7 +57,7 @@ Return JSON with exact structure:
 
         # Detect candidate target column
         target_candidate = None
-        target_keywords = ["churn", "target", "label", "price", "salary", "converted", "is_"]
+        target_keywords = ["churn", "target", "label", "price", "salary", "gross", "converted", "is_"]
         for c in cols:
             if any(k in c.lower() for k in target_keywords):
                 target_candidate = c
@@ -65,10 +65,14 @@ Return JSON with exact structure:
         if not target_candidate and cols:
             target_candidate = cols[-1]
 
-        # Determine task type
-        rec_task = "classification"
-        if target_candidate and any(k in target_candidate.lower() for k in ["price", "salary", "revenue", "cost"]):
-            rec_task = "regression"
+        # Determine task type using single source of truth detect_problem_type
+        from app.core.automl_engine import detect_problem_type
+        if df is not None and target_candidate:
+            rec_task, _ = detect_problem_type(df, target_col=target_candidate)
+        else:
+            rec_task = "classification"
+            if target_candidate and any(k in target_candidate.lower() for k in ["price", "salary", "gross", "revenue", "cost"]):
+                rec_task = "regression"
 
         return {
             "summary": f"Dataset '{filename}' comprises {row_cnt} records and {col_cnt} columns. Data profile demonstrates structured distribution suitable for {rec_task}.",
@@ -133,6 +137,18 @@ Return JSON with exact structure:
             "summary_stats": profile.summary_stats,
         }
 
+        import os
+        import pandas as pd
+        from app.core.profiler import clean_and_coerce_numeric_columns
+
+        df = None
+        if os.path.exists(dataset.raw_storage_path):
+            try:
+                df = pd.read_csv(dataset.raw_storage_path)
+                df = clean_and_coerce_numeric_columns(df)
+            except Exception:
+                df = None
+
         prompt = self._construct_prompt(dataset.filename, profile_data)
         llm_response = await self._call_llm_if_available(prompt)
 
@@ -140,7 +156,7 @@ Return JSON with exact structure:
             analysis_dict = llm_response
             raw_payload = llm_response
         else:
-            analysis_dict = self._generate_fallback_analysis(dataset.filename, profile_data)
+            analysis_dict = self._generate_fallback_analysis(dataset.filename, profile_data, df=df)
             raw_payload = {"engine": "fallback", "data": analysis_dict}
 
         analysis = await self.analysis_repo.create_or_update(

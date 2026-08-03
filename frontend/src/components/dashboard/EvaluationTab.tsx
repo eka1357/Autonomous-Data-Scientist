@@ -44,26 +44,26 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({
     <div className="space-y-6">
       {/* Inline Error Banner */}
       {errorMessage && (
-        <div className="p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between gap-3 text-xs text-red-700 font-medium">
+        <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-3 text-xs text-red-400 font-medium">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700 underline text-xs">
+          <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-red-300 underline text-xs">
             Dismiss
           </button>
         </div>
       )}
 
       {/* Header & Run Evaluation */}
-      <div className="panel-card p-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-blue-600" />
-            Model Evaluation & Explainability
+          <h2 className="text-base font-semibold text-white flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-blue-400" />
+            Model Evaluation & SHAP Explainability
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Accuracy, Precision, Recall, F1, ROC AUC, R², MAE, RMSE, 5-Fold Cross Validation, & SHAP Values.
+          <p className="text-xs text-slate-400 mt-0.5">
+            Test Set Performance Metrics, Confusion Matrices, 5-Fold Cross-Validation, & SHAP Feature Attributions.
           </p>
         </div>
 
@@ -71,10 +71,10 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({
           <button
             onClick={handleRunEvaluation}
             disabled={loading || !datasetId}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5" />
-            {loading ? "Evaluating..." : "Run Model Evaluation"}
+            {loading ? "Evaluating Model..." : "Run Model Evaluation"}
           </button>
 
           {datasetId && evaluation?.report_path && (
@@ -82,84 +82,101 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({
               href={api.getEvaluationReportUrl(datasetId)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
             >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
-              Download Eval Report
+              <Download className="w-3.5 h-3.5 text-slate-400" />
+              Download HTML Evaluation Report
             </a>
           )}
         </div>
       </div>
 
-      {/* Metric Grid Badges */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {Object.keys(metrics).length > 0 ? (
-          Object.entries(metrics).map(([k, v]) => {
-            if (k === "confusion_matrix" || k === "cross_validation") return null;
-            return (
-              <div key={k} className="panel-card p-3.5 text-center">
-                <span className="text-xs font-medium text-slate-500 uppercase">{k.replace("_", " ")}</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">{String(v)}</p>
-              </div>
-            );
-          })
-        ) : (
-          <div className="col-span-full panel-card p-6 text-center text-slate-500 text-xs">
-            Model evaluation metrics not yet generated. Train a model to view metrics.
-          </div>
-        )}
+      {/* Primary Metrics Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="glass-card rounded-2xl p-4">
+          <span className="text-xs text-slate-400 font-medium">Accuracy / R²</span>
+          <p className="text-xl font-bold text-white mt-0.5">{metrics.accuracy ?? metrics.r2 ?? "N/A"}</p>
+        </div>
+        <div className="glass-card rounded-2xl p-4">
+          <span className="text-xs text-slate-400 font-medium">F1 Score / MAE</span>
+          <p className="text-xl font-bold text-emerald-400 mt-0.5">{metrics.f1 ?? metrics.mae ?? "N/A"}</p>
+        </div>
+        <div className="glass-card rounded-2xl p-4">
+          <span className="text-xs text-slate-400 font-medium">Precision / RMSE</span>
+          <p className="text-xl font-bold text-white mt-0.5">{metrics.precision ?? metrics.rmse ?? "N/A"}</p>
+        </div>
+        <div className="glass-card rounded-2xl p-4">
+          <span className="text-xs text-slate-400 font-medium">Recall / MSE</span>
+          <p className="text-xl font-bold text-white mt-0.5">{metrics.recall ?? metrics.mse ?? "N/A"}</p>
+        </div>
       </div>
 
-      {/* Cross Validation */}
-      {cv.mean !== undefined && (
-        <div className="panel-card p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-blue-600" />
-            5-Fold Cross Validation
-          </h3>
-          <p className="text-xs text-slate-700">
-            Mean CV Score: <span className="font-semibold text-emerald-700">{cv.mean}</span> &plusmn; {cv.std}
-          </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {cv.folds?.map((score: number, idx: number) => (
-              <span key={idx} className="px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700">
-                Fold {idx + 1}: {score}
-              </span>
+      {/* Cross-Validation Card */}
+      {cv?.folds && (
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white">
+            <Activity className="w-4 h-4 text-purple-400" />
+            <span>5-Fold Cross-Validation Breakdown</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+            {cv.folds.map((score: number, idx: number) => (
+              <div key={idx} className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
+                <span className="text-[10px] text-slate-400 font-mono">Fold #{idx + 1}</span>
+                <p className="text-sm font-bold text-white mt-0.5">{score}</p>
+              </div>
             ))}
+            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
+              <span className="text-[10px] text-purple-300 font-mono">CV Mean ± Std</span>
+              <p className="text-sm font-bold text-purple-400 mt-0.5">{cv.mean} ± {cv.std}</p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Feature Importance & SHAP Values Table */}
-      <div className="panel-card p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-900">Feature Importance & SHAP Explainability</h3>
-        <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-2.5">Feature</th>
-                <th className="px-4 py-2.5">Importance Score</th>
-                <th className="px-4 py-2.5">Mean SHAP Value</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {Object.keys(featImp).length > 0 ? (
-                Object.entries(featImp).map(([col, score]: [string, any]) => (
-                  <tr key={col} className="hover:bg-slate-50 transition">
-                    <td className="px-4 py-2.5 font-medium text-slate-900">{col}</td>
-                    <td className="px-4 py-2.5 font-mono text-blue-700">{score}</td>
-                    <td className="px-4 py-2.5 font-mono text-purple-700">{shapVals[col] ?? "N/A"}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-slate-500">
-                    No feature importance data yet available.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Feature Importance & SHAP Values */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Feature Importance */}
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-white">MDI Feature Importance</h3>
+          {Object.keys(featImp).length > 0 ? (
+            <div className="space-y-2.5">
+              {Object.entries(featImp).map(([col, val]: [string, any]) => (
+                <div key={col} className="space-y-1">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-slate-200">{col}</span>
+                    <span className="text-blue-400 font-mono">{val}</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5">
+                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, val * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">Run evaluation to compute feature importance.</p>
+          )}
+        </div>
+
+        {/* SHAP Summary */}
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-white">SHAP Value Importance</h3>
+          {Object.keys(shapVals).length > 0 ? (
+            <div className="space-y-2.5">
+              {Object.entries(shapVals).map(([col, val]: [string, any]) => (
+                <div key={col} className="space-y-1">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-slate-200">{col}</span>
+                    <span className="text-purple-400 font-mono">{val}</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5">
+                    <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, val * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">Run evaluation to compute SHAP attributions.</p>
+          )}
         </div>
       </div>
     </div>
