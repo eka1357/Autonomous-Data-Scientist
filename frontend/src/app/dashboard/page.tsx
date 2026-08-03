@@ -157,6 +157,8 @@ export default function DashboardPage() {
             <PredictionTab
               datasetId={datasetId}
               history={predictionsHistory}
+              preprocessing={preprocessing}
+              profile={profile}
               onPredictSuccess={() => fetchDatasetDetails(datasetId)}
             />
           )}

@@ -140,25 +140,39 @@ def evaluate_trained_model(
         }
 
     # 3. SHAP Values Computation
-    if HAS_SHAP and problem_type in ("classification", "regression"):
+    if HAS_SHAP and problem_type in ("classification", "regression") and not X_test.empty:
         try:
-            sample_X = X_test.head(50)  # Use sample for performance
-            explainer = shap.Explainer(model, sample_X)
-            shap_result = explainer(sample_X)
+            sample_size = min(100, len(X_test))
+            sample_X = X_test.iloc[:sample_size].copy()
 
-            values = shap_result.values
-            if isinstance(values, list):
-                values = values[0]
-            if values.ndim == 3:  # Multi-class
-                values = np.abs(values).mean(axis=2)
+            for col in sample_X.columns:
+                sample_X[col] = pd.to_numeric(sample_X[col], errors="coerce").fillna(0.0)
 
-            mean_abs_shap = np.abs(values).mean(axis=0)
-            if len(mean_abs_shap) == len(feature_names):
+            model_name = type(model).__name__
+            if hasattr(model, "tree_") or any(k in model_name for k in ["Forest", "XGB", "LGBM", "Boosting", "Tree"]):
+                explainer = shap.TreeExplainer(model)
+                shap_vals = explainer.shap_values(sample_X)
+            elif "Linear" in model_name or "Logistic" in model_name:
+                explainer = shap.LinearExplainer(model, sample_X)
+                shap_vals = explainer.shap_values(sample_X)
+            else:
+                explainer = shap.Explainer(model, sample_X)
+                shap_result = explainer(sample_X)
+                shap_vals = getattr(shap_result, "values", shap_result)
+
+            if isinstance(shap_vals, list):
+                shap_matrix = np.mean([np.abs(np.array(v)) for v in shap_vals], axis=0)
+            elif isinstance(shap_vals, np.ndarray):
+                shap_matrix = np.abs(shap_vals).mean(axis=2) if shap_vals.ndim == 3 else np.abs(shap_vals)
+            else:
+                shap_matrix = None
+
+            if shap_matrix is not None and shap_matrix.ndim == 2 and shap_matrix.shape[1] == len(feature_names):
+                mean_abs_shap = shap_matrix.mean(axis=0)
                 shap_summary = {
                     col: round(float(val), 4) for col, val in zip(feature_names, mean_abs_shap)
                 }
         except Exception:
-            # Fallback to feature importances if SHAP calculation fails or unsupported for model type
             shap_summary = feature_importance
 
     if not shap_summary and feature_importance:

@@ -140,17 +140,22 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({
           <h3 className="text-sm font-bold text-white">MDI Feature Importance</h3>
           {Object.keys(featImp).length > 0 ? (
             <div className="space-y-2.5">
-              {Object.entries(featImp).map(([col, val]: [string, any]) => (
-                <div key={col} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-200">{col}</span>
-                    <span className="text-blue-400 font-mono">{val}</span>
+              {Object.entries(featImp).map(([col, val]: [string, any]) => {
+                const maxFi = Math.max(...(Object.values(featImp) as number[]).map(v => Number(v) || 0), 0.0001);
+                const numVal = Number(val) || 0;
+                const pct = Math.min(100, Math.max(4, (numVal / maxFi) * 100));
+                return (
+                  <div key={col} className="space-y-1">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-slate-200">{col}</span>
+                      <span className="text-blue-400 font-mono">{numVal}</span>
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, val * 100)}%` }} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-xs text-slate-400">Run evaluation to compute feature importance.</p>
@@ -162,17 +167,22 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({
           <h3 className="text-sm font-bold text-white">SHAP Value Importance</h3>
           {Object.keys(shapVals).length > 0 ? (
             <div className="space-y-2.5">
-              {Object.entries(shapVals).map(([col, val]: [string, any]) => (
-                <div key={col} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-200">{col}</span>
-                    <span className="text-purple-400 font-mono">{val}</span>
+              {Object.entries(shapVals).map(([col, val]: [string, any]) => {
+                const maxShap = Math.max(...(Object.values(shapVals) as number[]).map(v => Number(v) || 0), 0.0001);
+                const numVal = Number(val) || 0;
+                const pct = Math.min(100, Math.max(4, (numVal / maxShap) * 100));
+                return (
+                  <div key={col} className="space-y-1">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-slate-200">{col}</span>
+                      <span className="text-purple-400 font-mono">{numVal}</span>
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, val * 100)}%` }} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-xs text-slate-400">Run evaluation to compute SHAP attributions.</p>

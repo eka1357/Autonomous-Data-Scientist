@@ -1,24 +1,65 @@
 "use client";
 
-import React, { useState } from "react";
-import { Send, Download, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Send, Download, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface PredictionTabProps {
   datasetId: string;
   history: any[];
+  preprocessing?: any;
+  profile?: any;
   onPredictSuccess: () => void;
 }
 
 export const PredictionTab: React.FC<PredictionTabProps> = ({
   datasetId,
   history,
+  preprocessing,
+  profile,
   onPredictSuccess,
 }) => {
-  const [jsonInput, setJsonInput] = useState<string>('{"feature1": 2.5, "feature2": 3.5}');
+  const [jsonInput, setJsonInput] = useState<string>('{}');
   const [singleResult, setSingleResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Dynamically generate JSON template built from model's actual feature names and inferred types
+  useEffect(() => {
+    const summary = preprocessing?.execution_summary || {};
+    const plan = preprocessing?.preprocessing_plan || {};
+    const targetCol = preprocessing?.target_column || plan.target_column;
+
+    let featureNames: string[] = [];
+
+    if (summary.feature_names && Array.isArray(summary.feature_names) && summary.feature_names.length > 0) {
+      featureNames = summary.feature_names;
+    } else if (profile?.column_names && Array.isArray(profile.column_names)) {
+      featureNames = profile.column_names.filter((c: string) => c !== targetCol);
+    }
+
+    if (featureNames.length > 0) {
+      const templateObj: Record<string, any> = {};
+      const dataTypes = profile?.data_types || {};
+
+      featureNames.forEach((feat: string, idx: number) => {
+        const dtype = (dataTypes[feat] || "").toLowerCase();
+        if (dtype.includes("int")) {
+          templateObj[feat] = (idx + 1) * 10;
+        } else if (dtype.includes("float")) {
+          templateObj[feat] = Number((1.5 + idx * 0.5).toFixed(2));
+        } else if (dtype.includes("bool")) {
+          templateObj[feat] = true;
+        } else {
+          templateObj[feat] = Number((1.0 + idx * 0.5).toFixed(2));
+        }
+      });
+
+      setJsonInput(JSON.stringify(templateObj, null, 2));
+    } else {
+      setJsonInput(JSON.stringify({ feature_1: 1.0, feature_2: 2.0 }, null, 2));
+    }
+  }, [preprocessing, profile]);
 
   const handlePredictSingle = async () => {
     if (!datasetId) {
@@ -67,15 +108,17 @@ export const PredictionTab: React.FC<PredictionTabProps> = ({
 
       {/* Single Prediction Form */}
       <div className="glass-card rounded-2xl p-5 space-y-4">
-        <h3 className="text-sm font-bold text-white">Single Sample Inference</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white">Single Sample Inference (Dynamic Preprocessed Schema)</h3>
+        </div>
 
         <div className="space-y-2">
-          <label className="text-xs text-slate-400 font-medium">Feature Inputs (JSON format)</label>
+          <label className="text-xs text-slate-400 font-medium">Feature Inputs (JSON format auto-generated from model features)</label>
           <textarea
-            rows={4}
+            rows={6}
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
-            className="w-full p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-blue-300 font-mono focus:outline-none focus:border-blue-500 transition"
+            className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-blue-300 font-mono focus:outline-none focus:border-blue-500 transition"
           />
         </div>
 

@@ -142,8 +142,8 @@ def train_automl_models(
                 leaderboard.append({
                     "algorithm": name,
                     "status": "failed",
-                    "error": str(e),
-                    "score": -1.0,
+                    "error": f"{type(e).__name__}: {str(e)}",
+                    "score": -999999.0,
                 })
 
     elif problem_type == "regression":
@@ -168,12 +168,17 @@ def train_automl_models(
                 rmse = float(np.sqrt(mse))
                 r2 = float(r2_score(y_test, y_pred))
 
+                pred_var = float(np.var(y_pred)) if len(y_pred) > 1 else 1.0
+
                 metrics = {
                     "mae": round(mae, 4),
                     "mse": round(mse, 4),
                     "rmse": round(rmse, 4),
                     "r2": round(r2, 4),
+                    "pred_variance": round(pred_var, 6),
                 }
+                if pred_var < 1e-12:
+                    metrics["warning"] = "Near-zero variance in predictions detected"
 
                 leaderboard.append({
                     "algorithm": name,
@@ -191,8 +196,8 @@ def train_automl_models(
                 leaderboard.append({
                     "algorithm": name,
                     "status": "failed",
-                    "error": str(e),
-                    "score": -999.0,
+                    "error": f"{type(e).__name__}: {str(e)}",
+                    "score": -999999.0,
                 })
 
     else:  # clustering
@@ -241,12 +246,20 @@ def train_automl_models(
                 leaderboard.append({
                     "algorithm": name,
                     "status": "failed",
-                    "error": str(e),
-                    "score": -1.0,
+                    "error": f"{type(e).__name__}: {str(e)}",
+                    "score": -999999.0,
                 })
 
     # Sort leaderboard by score descending
     leaderboard.sort(key=lambda x: x.get("score", -999999.0), reverse=True)
+
+    # Sanity Check: if all models failed or all completed models computed to 0.0 metrics, raise error state
+    completed_models = [m for m in leaderboard if m.get("status") == "completed"]
+    all_scores_zero = len(completed_models) > 0 and all(m.get("score", 0.0) == 0.0 for m in completed_models)
+
+    if not completed_models or (all_scores_zero and len(completed_models) > 1):
+        err_msgs = [f"{m['algorithm']}: {m.get('error', 'Zero score/variance')}" for m in leaderboard]
+        raise ValueError(f"AutoML Pipeline Error: All algorithms failed or produced zero metrics. Details: {'; '.join(err_msgs)}")
 
     # Save best model to disk with joblib if output path provided
     if best_model_obj is not None and model_output_path:
