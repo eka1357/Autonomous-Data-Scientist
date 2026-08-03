@@ -110,7 +110,7 @@ class AutoMLService:
 
         return mt
 
-    async def get_model_download_path(self, dataset_id: UUID, user_id: UUID) -> tuple[str, str]:
+    async def get_model_download_path(self, dataset_id: UUID, user_id: UUID, format: str = "joblib") -> tuple[str, str]:
         dataset = await self.dataset_repo.get_by_id_and_user(dataset_id, user_id)
         if not dataset:
             raise ResourceNotFoundException("Dataset not found or access denied")
@@ -119,5 +119,13 @@ class AutoMLService:
         if not mt or not mt.model_path or not os.path.exists(mt.model_path):
             raise ResourceNotFoundException("Trained model binary not found or not yet generated")
 
-        filename = f"{dataset.filename}_best_model.joblib"
-        return mt.model_path, filename
+        target_path = mt.model_path
+        filename = f"{dataset.filename}_best_model.{format}"
+
+        if format == "onnx":
+            onnx_path = mt.model_path.replace(".joblib", ".onnx")
+            if not os.path.exists(onnx_path):
+                raise ResourceNotFoundException("ONNX model binary not found or not yet generated")
+            target_path = onnx_path
+
+        return target_path, filename

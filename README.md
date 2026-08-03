@@ -29,6 +29,16 @@ AutoDS is a production-grade, autonomous AI-powered Data Science platform. It tr
 
 ---
 
+## 🌟 Recent Enhancements (Phase 15 - UI/UX & ML Core Upgrade)
+
+- **Interactive Recharts Visualizations**: Replaced static Matplotlib charts in the UI with dynamic, interactive `Recharts` for missing values and data distributions.
+- **ONNX Model Export**: Added support for exporting best-performing models to standard `ONNX` format via `skl2onnx` alongside traditional `joblib` binaries.
+- **Advanced Multivariate Imputation**: Upgraded the data cleaning engine to support `KNNImputer` and `IterativeImputer` for more robust missing value interpolation.
+- **High-Cardinality Safeguards**: Added automatic fallback to Label Encoding if One-Hot Encoding encounters >50 unique values, preventing memory explosions.
+- **Global Dark Theme Engine**: Overhauled the frontend Next.js architecture with strict CSS variables and custom scrollbars for a cohesive, premium dark-mode glassmorphic aesthetic.
+
+---
+
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Lucide React, Axios, TanStack React Query.

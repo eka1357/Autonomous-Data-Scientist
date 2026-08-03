@@ -265,5 +265,17 @@ def train_automl_models(
     if best_model_obj is not None and model_output_path:
         os.makedirs(os.path.dirname(model_output_path), exist_ok=True)
         joblib.dump(best_model_obj, model_output_path)
+        
+        # Best-effort ONNX export
+        try:
+            from skl2onnx import to_onnx
+            onnx_path = model_output_path.replace(".joblib", ".onnx")
+            if hasattr(best_model_obj, "predict"):
+                X_sample = X_train.iloc[:1].astype(np.float32).values
+                onx = to_onnx(best_model_obj, X_sample)
+                with open(onnx_path, "wb") as f:
+                    f.write(onx.SerializeToString())
+        except Exception as e:
+            print(f"ONNX export skipped/failed: {e}")
 
     return best_model_obj, best_algorithm_name, round(best_score, 4), primary_metric, leaderboard

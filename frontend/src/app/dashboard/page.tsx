@@ -80,6 +80,74 @@ export default function DashboardPage() {
     }
   };
 
+  const handleLoadSampleDataset = async (sampleType: "tours" | "churn" | "housing") => {
+    let csvData = "";
+    let filename = "";
+
+    if (sampleType === "tours") {
+      filename = "concert_tours_sales.csv";
+      csvData = `Artist,Actual gross,Adjusted gross,Shows,Year
+Taylor Swift,"$736,421,584","$860,000,000",151,2023
+Coldplay,"$617,800,000","$650,000,000",107,2022
+Harry Styles,"$617,300,000","$630,000,000",169,2022
+Ed Sheeran,"$776,200,000","$820,000,000",255,2019
+U2,"$736,421,584","$810,000,000",110,2011
+Guns N Roses,"$584,200,000","$610,000,000",158,2019
+Rolling Stones,"$543,300,000","$580,000,000",147,2007
+Metallica,"$432,100,000","$460,000,000",130,2019
+Beyonce,"$579,800,000","$600,000,000",56,2023
+Pink,"$397,300,000","$420,000,000",156,2019`;
+    } else if (sampleType === "churn") {
+      filename = "customer_churn_telecom.csv";
+      csvData = `customer_id,age,tenure,monthly_charges,total_charges,contract,churn
+1001,45,24,65.5,1572.0,One-Year,0
+1002,29,3,89.9,269.7,Month-to-Month,1
+1003,58,60,110.2,6612.0,Two-Year,0
+1004,34,12,45.0,540.0,Month-to-Month,0
+1005,62,48,78.4,3763.2,One-Year,0
+1006,23,1,95.0,95.0,Month-to-Month,1
+1007,41,36,55.8,2008.8,Two-Year,0
+1008,50,18,102.5,1845.0,Month-to-Month,1
+1009,31,6,70.1,420.6,Month-to-Month,1
+1010,67,72,115.0,8280.0,Two-Year,0`;
+    } else {
+      filename = "housing_prices_seattle.csv";
+      csvData = `house_id,sqft,bedrooms,bathrooms,year_built,garage_cars,price
+2001,2150,4,2.5,2015,2,485000
+2002,1420,3,1.5,1998,1,295000
+2003,3100,5,3.5,2020,3,720000
+2004,980,2,1.0,1975,0,185000
+2005,1850,3,2.0,2008,2,395000
+2006,2600,4,3.0,2018,2,580000
+2007,1650,3,2.0,2002,1,340000
+2008,4200,6,4.5,2022,3,1150000
+2009,1200,2,1.5,1985,1,230000
+2010,2900,4,3.0,2012,2,650000`;
+    }
+
+    const blob = new Blob([csvData], { type: "text/csv" });
+    const file = new File([blob], filename, { type: "text/csv" });
+
+    try {
+      setUploading(true);
+      setUploadProgressMsg(`Loading sample dataset '${filename}' & executing pipeline...`);
+      const defaultProjectId = "00000000-0000-0000-0000-000000000000";
+      const res: any = await api.uploadDataset(defaultProjectId, file);
+      const newId = res?.data?.dataset_id || res?.data?.id;
+      if (newId) {
+        setDatasetId(newId);
+        setShowUploadModal(false);
+        setUploadFile(null);
+        await fetchDatasetDetails(newId);
+      }
+    } catch (err: any) {
+      alert("Sample upload failed: " + (err.message || "Error loading dataset"));
+    } finally {
+      setUploading(false);
+      setUploadProgressMsg("");
+    }
+  };
+
   const tabs = [
     { id: "overview", label: "Dataset Overview", icon: Database },
     { id: "cleaning", label: "Data Cleaning", icon: Filter },
@@ -101,8 +169,8 @@ export default function DashboardPage() {
       />
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
-        {/* Nav Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2 overflow-x-auto scrollbar-none">
+        {/* Workspace Navigation Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-none">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
@@ -202,7 +270,7 @@ export default function DashboardPage() {
                 </p>
               )}
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
@@ -220,6 +288,41 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+
+            {/* Quickstart Sample Datasets Section */}
+            <div className="pt-4 border-t border-slate-800/80 space-y-2.5">
+              <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 block">
+                Or Try a Quickstart Demo Dataset
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleLoadSampleDataset("tours")}
+                  disabled={uploading}
+                  className="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left transition disabled:opacity-50 group"
+                >
+                  <p className="text-[11px] font-bold text-white group-hover:text-blue-400 truncate">🎵 Concert Tours</p>
+                  <p className="text-[10px] text-slate-400 font-mono">Regression ($)</p>
+                </button>
+
+                <button
+                  onClick={() => handleLoadSampleDataset("churn")}
+                  disabled={uploading}
+                  className="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left transition disabled:opacity-50 group"
+                >
+                  <p className="text-[11px] font-bold text-white group-hover:text-purple-400 truncate">👥 Telecom Churn</p>
+                  <p className="text-[10px] text-slate-400 font-mono">Classification</p>
+                </button>
+
+                <button
+                  onClick={() => handleLoadSampleDataset("housing")}
+                  disabled={uploading}
+                  className="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left transition disabled:opacity-50 group"
+                >
+                  <p className="text-[11px] font-bold text-white group-hover:text-emerald-400 truncate">🏠 Seattle Homes</p>
+                  <p className="text-[10px] text-slate-400 font-mono">Regression</p>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

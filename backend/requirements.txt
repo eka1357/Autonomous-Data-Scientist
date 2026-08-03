@@ -35,3 +35,5 @@ ruff>=0.6.2,<0.7.0
 mypy>=1.11.2,<1.12.0
 prometheus-fastapi-instrumentator>=7.0.0,<8.0.0
 slowapi>=0.1.9,<0.2.0
+onnx>=1.16.0,<1.17.0
+skl2onnx>=1.17.0,<1.18.0

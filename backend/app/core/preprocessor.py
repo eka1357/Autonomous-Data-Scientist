@@ -54,11 +54,17 @@ def execute_preprocessing_plan(
                 continue
             meth_str = str(method).lower()
             if meth_str in ("onehot", "one_hot", "one-hot"):
-                dummies = pd.get_dummies(ml_df[col], prefix=col, drop_first=False, dtype=int)
-                ml_df = pd.concat([ml_df.drop(columns=[col]), dummies], axis=1)
-                applied_operations.append(
-                    f"One-Hot encoded column '{col}' into {len(dummies.columns)} binary columns"
-                )
+                unique_vals = ml_df[col].nunique()
+                if unique_vals > 50:
+                    le = LabelEncoder()
+                    ml_df[col] = le.fit_transform(ml_df[col].astype(str))
+                    applied_operations.append(f"Label encoded column '{col}' (fallback from one-hot due to high cardinality: {unique_vals})")
+                else:
+                    dummies = pd.get_dummies(ml_df[col], prefix=col, drop_first=False, dtype=int)
+                    ml_df = pd.concat([ml_df.drop(columns=[col]), dummies], axis=1)
+                    applied_operations.append(
+                        f"One-Hot encoded column '{col}' into {len(dummies.columns)} binary columns"
+                    )
             elif meth_str in ("label", "label_encoder"):
                 le = LabelEncoder()
                 ml_df[col] = le.fit_transform(ml_df[col].astype(str))

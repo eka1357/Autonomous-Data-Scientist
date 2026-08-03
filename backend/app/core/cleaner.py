@@ -81,6 +81,23 @@ def execute_cleaning_plan(
             elif strat_str == "bfill":
                 cleaned_df[col] = cleaned_df[col].bfill()
                 applied_operations.append(f"Backward filled missing in '{col}'")
+            elif strat_str == "knn" and is_numeric:
+                from sklearn.impute import KNNImputer
+                numeric_df = cleaned_df.select_dtypes(include=["number"])
+                imputer = KNNImputer(n_neighbors=5)
+                imputed_numeric = imputer.fit_transform(numeric_df)
+                imputed_df = pd.DataFrame(imputed_numeric, columns=numeric_df.columns, index=numeric_df.index)
+                cleaned_df[col] = imputed_df[col]
+                applied_operations.append(f"Filled missing in '{col}' using KNNImputer")
+            elif strat_str == "iterative" and is_numeric:
+                from sklearn.experimental import enable_iterative_imputer  # noqa
+                from sklearn.impute import IterativeImputer
+                numeric_df = cleaned_df.select_dtypes(include=["number"])
+                imputer = IterativeImputer(random_state=42)
+                imputed_numeric = imputer.fit_transform(numeric_df)
+                imputed_df = pd.DataFrame(imputed_numeric, columns=numeric_df.columns, index=numeric_df.index)
+                cleaned_df[col] = imputed_df[col]
+                applied_operations.append(f"Filled missing in '{col}' using IterativeImputer")
             else:
                 if is_numeric:
                     val = cleaned_df[col].median()

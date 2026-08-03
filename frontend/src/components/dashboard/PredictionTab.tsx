@@ -122,14 +122,28 @@ export const PredictionTab: React.FC<PredictionTabProps> = ({
           />
         </div>
 
-        <button
-          onClick={handlePredictSingle}
-          disabled={loading || !datasetId}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
-        >
-          <Send className="w-3.5 h-3.5" />
-          {loading ? "Predicting..." : "Execute Prediction"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            onClick={handlePredictSingle}
+            disabled={loading || !datasetId}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition shadow-md shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
+          >
+            <Send className="w-3.5 h-3.5" />
+            {loading ? "Predicting..." : "Execute Prediction"}
+          </button>
+
+          {datasetId && (
+            <a
+              href={api.getModelDownloadUrl(datasetId)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+            >
+              <Download className="w-3.5 h-3.5 text-purple-400" />
+              Download Model (.joblib)
+            </a>
+          )}
+        </div>
 
         {singleResult && (
           <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">

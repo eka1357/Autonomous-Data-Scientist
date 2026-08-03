@@ -70,11 +70,12 @@ async def get_dataset_models_endpoint(
 @router.get("/datasets/{dataset_id}/models/download", status_code=status.HTTP_200_OK)
 async def download_best_model_endpoint(
     dataset_id: UUID,
+    format: str = "joblib",
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> FileResponse:
     automl_service = AutoMLService(db)
-    file_path, filename = await automl_service.get_model_download_path(dataset_id, current_user.id)
+    file_path, filename = await automl_service.get_model_download_path(dataset_id, current_user.id, format=format)
 
     return FileResponse(
         path=file_path,

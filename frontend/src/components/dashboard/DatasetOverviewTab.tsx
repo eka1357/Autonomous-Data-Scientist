@@ -3,6 +3,8 @@
 import React from "react";
 import { Database, FileSpreadsheet, Layers, AlertCircle, Sparkles } from "lucide-react";
 
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+
 interface DatasetOverviewTabProps {
   dataset: any;
   profile: any;
@@ -24,6 +26,10 @@ export const DatasetOverviewTab: React.FC<DatasetOverviewTabProps> = ({
 
   const missingValues = profile?.missing_values || {};
   const dataTypes = profile?.data_types || {};
+
+  const missingDataChart = Object.keys(missingValues)
+    .map((col) => ({ name: col, missing: missingValues[col] }))
+    .filter((d) => d.missing > 0);
 
   return (
     <div className="space-y-6">
@@ -89,6 +95,27 @@ export const DatasetOverviewTab: React.FC<DatasetOverviewTabProps> = ({
                 Candidate Target Column: <strong className="text-white">{analysis.target_column_candidate}</strong>
               </span>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Chart for Missing Values */}
+      {missingDataChart.length > 0 && (
+        <div className="glass-card rounded-2xl p-6 space-y-4">
+          <h3 className="text-base font-bold text-white">Missing Values Overview</h3>
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={missingDataChart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: "rgba(255,255,255,0.05)" }} contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px", fontSize: "12px" }} />
+                <Bar dataKey="missing" radius={[4, 4, 0, 0]}>
+                  {missingDataChart.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill="#f59e0b" />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}

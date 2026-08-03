@@ -28,9 +28,26 @@ def clean_and_coerce_numeric_columns(df: pd.DataFrame, coercion_threshold: float
         col_series = df_cleaned[col]
         if pd.api.types.is_object_dtype(col_series) or isinstance(col_series.dtype, pd.CategoricalDtype):
             s_str = col_series.astype(str).str.strip()
-            # Strip currency symbols $, €, £, ¥, commas, and whitespace
-            cleaned_s = s_str.str.replace(r"[\$,£€¥\s]", "", regex=True)
+            # Strip currency symbols $, €, £, ¥, and whitespace (leave commas and periods)
+            cleaned_s = s_str.str.replace(r"[\$£€¥\s]", "", regex=True)
 
+            def parse_euro_num(val):
+                if pd.isna(val) or val == "": return val
+                val = str(val)
+                if "," in val and "." in val:
+                    if val.rfind(",") > val.rfind("."):
+                        val = val.replace(".", "").replace(",", ".")
+                    else:
+                        val = val.replace(",", "")
+                elif "," in val and "." not in val:
+                    parts = val.split(",")
+                    if len(parts) == 2 and len(parts[1]) in (1, 2):
+                        val = val.replace(",", ".")
+                    else:
+                        val = val.replace(",", "")
+                return val
+
+            cleaned_s = cleaned_s.apply(parse_euro_num)
             numeric_s = pd.to_numeric(cleaned_s, errors="coerce")
 
             # Count valid original entries (excluding nulls / empty / nan representations)
