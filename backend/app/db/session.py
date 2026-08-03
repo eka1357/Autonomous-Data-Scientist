@@ -1,10 +1,19 @@
 from typing import AsyncGenerator
+import os
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
 
+# Determine DB host: if running locally outside docker, fallback to localhost
+default_url = "postgresql+asyncpg://autods_user:autods_password@localhost:5432/autods_db"
+db_url = settings.DATABASE_URL or default_url
+
+# If configured with docker host 'postgres' but running locally outside docker, use localhost
+if "postgres:5432" in db_url and not os.path.exists("/.dockerenv"):
+    db_url = db_url.replace("postgres:5432", "localhost:5432")
+
 engine = create_async_engine(
-    settings.DATABASE_URL or "postgresql+asyncpg://autods_user:autods_password@postgres:5432/autods_db",
+    db_url,
     echo=settings.ENVIRONMENT == "development",
     future=True,
     pool_pre_ping=True,
@@ -30,4 +39,3 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
-

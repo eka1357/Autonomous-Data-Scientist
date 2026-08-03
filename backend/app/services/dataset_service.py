@@ -24,6 +24,116 @@ class DatasetService:
         self.dataset_repo = DatasetRepository(session)
         self.project_repo = ProjectRepository(session)
 
+    async def run_pipeline(self, dataset_id: UUID) -> None:
+        """Run the full data science pipeline inline using the current session."""
+        from app.services.profiling_service import ProfilingService
+        from app.services.ai_analysis_service import AIAnalysisService
+        from app.services.cleaning_service import CleaningService
+        from app.services.eda_service import EDAService
+        from app.services.preprocessing_service import PreprocessingService
+        from app.services.automl_service import AutoMLService
+        from app.services.evaluation_service import EvaluationService
+
+        dataset = await self.dataset_repo.get_by_id(dataset_id)
+        if not dataset:
+            logger.error(f"Pipeline aborted: dataset '{dataset_id}' not found")
+            return
+
+        dataset.status = "processing"
+        await self.session.commit()
+
+        failed_steps: list[str] = []
+
+        # Step 1: Profile Dataset
+        try:
+            logger.info(f"Pipeline [{dataset_id}] Step 1/7: Profiling")
+            profiling_service = ProfilingService(self.session)
+            await profiling_service.run_profiling(dataset_id)
+        except Exception as exc:
+            await self.session.rollback()
+            logger.error(f"Pipeline [{dataset_id}] Profiling failed: {exc}")
+            failed_steps.append("profiling")
+
+        # Step 2: AI Analysis
+        try:
+            logger.info(f"Pipeline [{dataset_id}] Step 2/7: AI Analysis")
+            ai_service = AIAnalysisService(self.session)
+            await ai_service.generate_analysis(dataset_id)
+        except Exception as exc:
+            await self.session.rollback()
+            logger.error(f"Pipeline [{dataset_id}] AI Analysis failed: {exc}")
+            failed_steps.append("ai_analysis")
+
+        # Step 3: Data Cleaning
+        try:
+            logger.info(f"Pipeline [{dataset_id}] Step 3/7: Data Cleaning")
+            cleaning_service = CleaningService(self.session)
+            await cleaning_service.generate_and_execute_cleaning(dataset_id)
+        except Exception as exc:
+            await self.session.rollback()
+            logger.error(f"Pipeline [{dataset_id}] Cleaning failed: {exc}")
+            failed_steps.append("cleaning")
+
+        # Step 4: EDA
+        try:
+            logger.info(f"Pipeline [{dataset_id}] Step 4/7: EDA")
+            eda_service = EDAService(self.session)
+            await eda_service.run_eda(dataset_id)
+        except Exception as exc:
+            await self.session.rollback()
+            logger.error(f"Pipeline [{dataset_id}] EDA failed: {exc}")
+            failed_steps.append("eda")
+
+        # Step 5: Preprocessing
+        try:
+            logger.info(f"Pipeline [{dataset_id}] Step 5/7: Preprocessing")
+            prep_service = PreprocessingService(self.session)
+            await prep_service.run_preprocessing(dataset_id)
+        except Exception as exc:
+            await self.session.rollback()
+            logger.error(f"Pipeline [{dataset_id}] Preprocessing failed: {exc}")
+            failed_steps.append("preprocessing")
+
+        # Step 6: AutoML Training (requires preprocessing to have succeeded)
+        if "preprocessing" not in failed_steps:
+            try:
+                logger.info(f"Pipeline [{dataset_id}] Step 6/7: AutoML Training")
+                automl_service = AutoMLService(self.session)
+                await automl_service.run_automl(dataset_id)
+            except Exception as exc:
+                await self.session.rollback()
+                logger.error(f"Pipeline [{dataset_id}] AutoML failed: {exc}")
+                failed_steps.append("automl")
+        else:
+            logger.warning(f"Pipeline [{dataset_id}] Skipping AutoML (preprocessing failed)")
+            failed_steps.append("automl")
+
+        # Step 7: Model Evaluation (requires AutoML to have succeeded)
+        if "automl" not in failed_steps:
+            try:
+                logger.info(f"Pipeline [{dataset_id}] Step 7/7: Evaluation")
+                eval_service = EvaluationService(self.session)
+                await eval_service.run_evaluation(dataset_id)
+            except Exception as exc:
+                await self.session.rollback()
+                logger.error(f"Pipeline [{dataset_id}] Evaluation failed: {exc}")
+                failed_steps.append("evaluation")
+        else:
+            logger.warning(f"Pipeline [{dataset_id}] Skipping Evaluation (AutoML failed)")
+            failed_steps.append("evaluation")
+
+        # Update final status
+        try:
+            dataset = await self.dataset_repo.get_by_id(dataset_id)
+            if dataset:
+                dataset.status = "completed"
+                await self.session.commit()
+        except Exception as exc:
+            await self.session.rollback()
+            logger.error(f"Failed to update dataset final status: {exc}")
+
+        logger.info(f"Pipeline [{dataset_id}] finished. Failed steps: {failed_steps or 'None'}")
+
     async def upload_dataset(
         self, user_id: UUID, project_id: UUID, file: UploadFile
     ) -> DatasetUploadResponseData:
@@ -106,19 +216,19 @@ class DatasetService:
         )
         await self.session.commit()
 
-        # Queue Celery processing task with fallback
+        # Run the full pipeline inline (synchronous within this request)
         try:
-            from app.worker.celery_app import celery_app
-            celery_app.send_task("process_uploaded_dataset", args=[str(dataset.id)])
-        except Exception:
-            # Synchronous / thread fallback when Celery worker daemon is offline
-            try:
-                import threading
-                from app.worker.tasks import process_uploaded_dataset
-                threading.Thread(target=process_uploaded_dataset, args=(str(dataset.id),), daemon=True).start()
-            except Exception as thread_exc:
-                logger.warning(f"Fallback thread execution failed: {thread_exc}")
+            await self.run_pipeline(dataset.id)
+        except Exception as exc:
+            await self.session.rollback()
+            logger.error(f"Pipeline execution failed for dataset '{dataset.id}': {exc}")
+            dataset = await self.dataset_repo.get_by_id(dataset.id)
+            if dataset:
+                dataset.status = "failed"
+                await self.session.commit()
 
+        # Re-read dataset to get updated status
+        dataset = await self.dataset_repo.get_by_id(dataset.id)
 
         return DatasetUploadResponseData(
             dataset_id=dataset.id,

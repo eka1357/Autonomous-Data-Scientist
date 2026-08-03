@@ -11,7 +11,7 @@ import { EvaluationTab } from "@/components/dashboard/EvaluationTab";
 import { PredictionTab } from "@/components/dashboard/PredictionTab";
 import { AIChatTab } from "@/components/dashboard/AIChatTab";
 import { api } from "@/lib/api";
-import { Database, Filter, BarChart3, Cpu, ShieldCheck, Sparkles, Send, Upload } from "lucide-react";
+import { Database, Filter, BarChart3, Cpu, ShieldCheck, Sparkles, Send, Upload, Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [predictionsHistory, setPredictionsHistory] = useState<any[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgressMsg, setUploadProgressMsg] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
 
   const fetchDatasetDetails = async (id: string) => {
@@ -54,11 +55,33 @@ export default function DashboardPage() {
     }
   }, [datasetId]);
 
+  // Polling for processing status if pipeline is active
+  useEffect(() => {
+    if (!datasetId || dataset?.status === "completed" || dataset?.status === "failed") return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.getDataset(datasetId);
+        if (res.data) {
+          setDataset(res.data);
+          if (res.data.status === "completed") {
+            fetchDatasetDetails(datasetId);
+          }
+        }
+      } catch (e) {
+        console.error("Polling status error:", e);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [datasetId, dataset?.status]);
+
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadFile) return;
     try {
       setUploading(true);
+      setUploadProgressMsg("Uploading dataset & running autonomous pipeline...");
       const defaultProjectId = "00000000-0000-0000-0000-000000000000";
       const res: any = await api.uploadDataset(defaultProjectId, uploadFile);
       const newId = res?.data?.dataset_id || res?.data?.id;
@@ -66,12 +89,13 @@ export default function DashboardPage() {
         setDatasetId(newId);
         setShowUploadModal(false);
         setUploadFile(null);
-        fetchDatasetDetails(newId);
+        await fetchDatasetDetails(newId);
       }
     } catch (err: any) {
       alert("Upload failed: " + (err.message || "Error uploading file"));
     } finally {
       setUploading(false);
+      setUploadProgressMsg("");
     }
   };
 
@@ -90,8 +114,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <DashboardHeader
         datasetId={datasetId}
-        datasetName={dataset?.filename || "No Dataset Loaded"}
-        status={dataset?.status || "uploaded"}
+        datasetName={dataset?.filename || ""}
+        status={dataset?.status || ""}
         onUploadClick={() => setShowUploadModal(true)}
       />
 
@@ -169,30 +193,47 @@ export default function DashboardPage() {
           <div className="w-full max-w-md p-6 rounded-xl bg-white border border-slate-200 shadow-lg space-y-4">
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
               <Upload className="w-4 h-4 text-blue-600" />
-              Upload Dataset (CSV)
+              Upload Dataset (CSV / XLSX)
             </h3>
             <form onSubmit={handleUploadSubmit} className="space-y-4">
               <input
                 type="file"
                 accept=".csv,.xlsx"
                 onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border file:border-slate-300 file:text-xs file:font-medium file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
+                disabled={uploading}
+                className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border file:border-slate-300 file:text-xs file:font-medium file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 cursor-pointer disabled:opacity-50"
                 required
               />
+
+              {uploading && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-xs text-blue-700 font-medium">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  <span>{uploadProgressMsg}</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
+                  disabled={uploading}
                   onClick={() => setShowUploadModal(false)}
-                  className="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
+                  className="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !uploadFile}
-                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 transition"
+                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 transition flex items-center gap-1.5"
                 >
-                  {uploading ? "Uploading..." : "Upload Dataset"}
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Upload & Process"
+                  )}
                 </button>
               </div>
             </form>
@@ -202,4 +243,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

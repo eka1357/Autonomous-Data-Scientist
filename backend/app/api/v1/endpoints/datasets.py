@@ -285,3 +285,31 @@ async def delete_dataset(
         },
     )
 
+
+@router.post("/{dataset_id}/process", status_code=status.HTTP_200_OK)
+async def process_dataset(
+    dataset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """Trigger or re-trigger the full data science pipeline for a dataset."""
+    dataset_service = DatasetService(db)
+    dataset = await dataset_service.get_dataset(dataset_id, current_user.id)
+
+    await dataset_service.run_pipeline(dataset.id)
+
+    # Re-read updated dataset
+    dataset = await dataset_service.get_dataset(dataset_id, current_user.id)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "data": {
+                "dataset_id": str(dataset.id),
+                "status": dataset.status,
+                "message": "Pipeline processing completed",
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )

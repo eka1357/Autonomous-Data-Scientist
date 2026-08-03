@@ -11,12 +11,20 @@ from app.core.config import settings
 from app.core.exceptions import AutoDSException, autods_exception_handler, global_exception_handler
 from app.core.limiter import limiter
 from app.core.logging import setup_logging
+from app.db.base import Base
+from app.db.session import engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging()
     logger.info(f"Starting {settings.PROJECT_NAME} backend in [{settings.ENVIRONMENT}] mode")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified/created successfully.")
+    except Exception as exc:
+        logger.error(f"Error initializing database tables: {exc}")
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME} backend")
 
