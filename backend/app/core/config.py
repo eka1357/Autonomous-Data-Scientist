@@ -24,7 +24,32 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "dev-insecure-secret-key-do-not-use-in-prod-32b"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    FRONTEND_URL: str | None = None
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any, info: ValidationInfo) -> list[str]:
+        origins: list[str] = []
+        if isinstance(v, str):
+            import json
+            v_trimmed = v.strip()
+            if v_trimmed.startswith("[") and v_trimmed.endswith("]"):
+                try:
+                    origins = [str(item).strip() for item in json.loads(v_trimmed)]
+                except Exception:
+                    origins = [item.strip() for item in v_trimmed.strip("[]").split(",") if item.strip()]
+            else:
+                origins = [item.strip() for item in v_trimmed.split(",") if item.strip()]
+        elif isinstance(v, list):
+            origins = [str(item).strip() for item in v if item]
+        else:
+            origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+        frontend_url = info.data.get("FRONTEND_URL") if hasattr(info, "data") else None
+        if frontend_url and str(frontend_url).strip() not in origins:
+            origins.append(str(frontend_url).strip())
+        return origins
 
     # Database
     POSTGRES_USER: str = "autods_user"
@@ -37,8 +62,13 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: str | None, info: ValidationInfo) -> Any:
-        if isinstance(v, str) and v:
-            return v
+        if isinstance(v, str) and v.strip():
+            url = v.strip()
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url
         values = info.data
         user = values.get("POSTGRES_USER")
         password = values.get("POSTGRES_PASSWORD")

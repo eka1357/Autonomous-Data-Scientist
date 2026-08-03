@@ -61,3 +61,8 @@ app.add_exception_handler(Exception, global_exception_handler)
 from app.api.v1.router import api_router
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.get("/health", status_code=200)
+async def top_level_health_check() -> dict[str, Any]:
+    return {"status": "healthy", "project": settings.PROJECT_NAME, "environment": settings.ENVIRONMENT}

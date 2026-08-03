@@ -17,4 +17,6 @@ celery_app.conf.update(
     task_track_started=True,
     task_time_limit=3600,  # 1 hour hard limit
     task_soft_time_limit=3300,  # 55 minutes soft limit
+    broker_connection_retry_on_startup=True,
+    broker_connection_max_retries=10,
 )

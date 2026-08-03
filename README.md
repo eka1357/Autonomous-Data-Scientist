@@ -151,6 +151,85 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## 🌐 Option 3: Free-Tier Production Deployment (Render + Vercel)
+
+AutoDS is optimized for 100% free-tier deployment on **Render** (Backend API, Celery Worker, PostgreSQL 17 + `pgvector`, Redis) and **Vercel** (Next.js Frontend).
+
+```
+ ┌──────────────────────────────────┐        ┌──────────────────────────────────┐
+ │         Vercel (Free)            │        │          Render (Free)           │
+ │  Next.js 15 App Router Frontend  ├───────►│  FastAPI Backend (Web Service)   │
+ └──────────────────────────────────┘        └─────────────────┬────────────────┘
+                                                               │
+                                             ┌─────────────────┴────────────────┐
+                                             ▼                                  ▼
+                                   ┌───────────────────┐              ┌───────────────────┐
+                                   │  PostgreSQL 17    │              │   Celery Worker   │
+                                   │   (+ pgvector)    │              │  (Redis Queue)    │
+                                   └───────────────────┘              └───────────────────┘
+```
+
+### 1. Render Infrastructure Blueprint ([render.yaml](file:///c:/Users/mahin/OneDrive/Desktop/Projects/Data_projects/Autonomous%20Data%20Scientist/render.yaml))
+The repository includes a root `render.yaml` defining:
+- **`autods-backend`**: Web service running `uvicorn app.main:app --host 0.0.0.0 --port $PORT` with release command `cd backend && alembic upgrade head` and health check `/health`.
+- **`autods-celery-worker`**: Background worker running `celery -A app.worker.celery_app.celery_app worker --loglevel=info --concurrency=2` (conservative concurrency to stay under 512 MB RAM).
+- **`autods-postgres`**: Free PostgreSQL 17 database instance.
+- **`autods-redis`**: Free Redis instance (`allkeys-lru` eviction).
+
+---
+
+### 2. Render Free-Tier Postgres 30-Day Backup & Restoration Guide
+
+> [!WARNING]
+> Render's free PostgreSQL databases expire and are deleted 30 days after creation. Follow this 3-step export/import process before the 30-day window to prevent data loss.
+
+#### Exporting Data Before Expiration:
+```bash
+# Obtain external connection string from Render Postgres Dashboard
+pg_dump "postgresql://autods_user:PASSWORD@dpg-xxx-a.oregon-postgres.render.com/autods_db" > autods_backup.sql
+```
+
+#### Provisioning & Restoring into a Fresh Instance:
+1. Create a new free PostgreSQL database in the Render Dashboard named `autods-postgres-new`.
+2. Restore your SQL dump into the new database:
+```bash
+psql "postgresql://autods_user:NEW_PASSWORD@dpg-yyy-a.oregon-postgres.render.com/autods_db" < autods_backup.sql
+```
+3. Update `DATABASE_URL` in your `autods-backend` and `autods-celery-worker` environment settings to point to the new Postgres database URL.
+
+---
+
+### 3. Step-by-Step Dashboard Deployment Checklist
+
+#### A. Render Deployment (Backend & Database Services)
+1. Push your AutoDS project repository to **GitHub**.
+2. Log into [Render Dashboard](https://dashboard.render.com/).
+3. Click **New +** → **Blueprint**.
+4. Connect your `Autonomous-Data-Scientist` GitHub repository.
+5. Render will automatically detect [render.yaml](file:///c:/Users/mahin/OneDrive/Desktop/Projects/Data_projects/Autonomous%20Data%20Scientist/render.yaml) and display 4 services:
+   - `autods-postgres` (Database)
+   - `autods-redis` (Redis Cache)
+   - `autods-backend` (FastAPI Web Service)
+   - `autods-celery-worker` (Background Task Processor)
+6. Under `autods-backend` and `autods-celery-worker`, set the environment variable:
+   - `OPENAI_API_KEY`: `your-actual-openai-api-key`
+7. Click **Apply**. Render will automatically provision PostgreSQL, Redis, run Alembic migrations, and deploy the FastAPI web server & Celery worker.
+8. Copy your published Backend Web Service URL (e.g. `https://autods-backend.onrender.com`).
+
+#### B. Vercel Deployment (Frontend Application)
+1. Log into [Vercel Dashboard](https://vercel.com/dashboard).
+2. Click **Add New...** → **Project**.
+3. Import your `Autonomous-Data-Scientist` GitHub repository.
+4. Set **Root Directory** to `frontend`.
+5. Under **Environment Variables**, add:
+   - **Key**: `NEXT_PUBLIC_API_URL`
+   - **Value**: `https://autods-backend.onrender.com/api/v1` (replace with your actual Render URL).
+6. Click **Deploy**.
+7. Once deployed, copy your Vercel Production URL (e.g., `https://autods-frontend.vercel.app`).
+8. Return to Render Dashboard → `autods-backend` → Environment, and update `FRONTEND_URL` to your Vercel URL.
+
+---
+
 ## 🧪 Running Automated Tests
 
 To execute the complete 14-phase automated unit and integration test suite:
