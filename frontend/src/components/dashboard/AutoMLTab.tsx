@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Cpu, Download, Play, Trophy, CheckCircle2 } from "lucide-react";
+import { Cpu, Download, Play, Trophy } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface AutoMLTabProps {
@@ -34,24 +34,24 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
   return (
     <div className="space-y-6">
       {/* Header & Run AutoML */}
-      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="panel-card p-5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-amber-400" />
+          <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-blue-600" />
             Automated Machine Learning (AutoML) Leaderboard
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-0.5">
             Automated algorithm competition across Logistic Regression, Random Forest, XGBoost, LightGBM, & Clustering.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleRunAutoML}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-amber-600 hover:bg-amber-500 text-white transition shadow-lg shadow-amber-600/20 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50"
           >
-            <Play className="w-4 h-4" />
+            <Play className="w-3.5 h-3.5" />
             {loading ? "Training Models..." : "Train AutoML Suite"}
           </button>
 
@@ -60,9 +60,9 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
               href={api.getModelDownloadUrl(datasetId)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition"
             >
-              <Download className="w-4 h-4 text-amber-400" />
+              <Download className="w-3.5 h-3.5 text-slate-500" />
               Download best_model.joblib
             </a>
           )}
@@ -71,16 +71,16 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
 
       {/* Best Model Winner Banner */}
       {models && (
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              <Trophy className="w-8 h-8" />
+        <div className="panel-card p-5 bg-gradient-to-r from-amber-50 to-white border border-amber-200 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center">
+              <Trophy className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Winning Model</span>
-              <h3 className="text-2xl font-extrabold text-white mt-0.5">{bestAlgorithm}</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Problem Type: <span className="text-slate-200 font-semibold uppercase">{problemType}</span> | Metric ({primaryMetric}): <span className="text-emerald-400 font-bold">{bestScore}</span>
+              <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider">Top Performing Model</span>
+              <h3 className="text-lg font-bold text-slate-900 mt-0.5">{bestAlgorithm}</h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Problem Type: <span className="text-slate-900 font-semibold uppercase">{problemType}</span> | Metric ({primaryMetric}): <span className="text-emerald-700 font-bold">{bestScore}</span>
               </p>
             </div>
           </div>
@@ -88,35 +88,35 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
       )}
 
       {/* Leaderboard Table */}
-      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl space-y-4">
-        <h3 className="text-base font-semibold text-white">Algorithm Benchmark Leaderboard</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-800/80 text-xs uppercase text-slate-400 border-b border-slate-700">
+      <div className="panel-card p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-slate-900">Algorithm Benchmark Leaderboard</h3>
+        <div className="overflow-x-auto border border-slate-200 rounded-lg">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">Rank</th>
-                <th className="px-4 py-3">Algorithm</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Primary Score ({primaryMetric})</th>
-                <th className="px-4 py-3">Metrics Breakdown</th>
+                <th className="px-4 py-2.5">Rank</th>
+                <th className="px-4 py-2.5">Algorithm</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Primary Score ({primaryMetric})</th>
+                <th className="px-4 py-2.5">Metrics Breakdown</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-200 bg-white">
               {leaderboard.map((item: any, idx: number) => {
                 const isWinner = idx === 0 && item.status === "completed";
                 return (
-                  <tr key={idx} className={`hover:bg-slate-800/40 transition ${isWinner ? "bg-amber-500/10" : ""}`}>
-                    <td className="px-4 py-3 font-bold text-white">
-                      {isWinner ? <Trophy className="w-4 h-4 text-amber-400 inline mr-1" /> : `#${idx + 1}`}
+                  <tr key={idx} className={`hover:bg-slate-50 transition ${isWinner ? "bg-amber-50/50" : ""}`}>
+                    <td className="px-4 py-2.5 font-bold text-slate-900">
+                      {isWinner ? <Trophy className="w-3.5 h-3.5 text-amber-600 inline mr-1" /> : `#${idx + 1}`}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-white">{item.algorithm}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${item.status === "completed" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                    <td className="px-4 py-2.5 font-semibold text-slate-900">{item.algorithm}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.status === "completed" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
                         {item.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono font-bold text-emerald-400">{item.score}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-2.5 font-mono font-semibold text-emerald-700">{item.score}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
                       {item.metrics ? JSON.stringify(item.metrics) : item.error || "N/A"}
                     </td>
                   </tr>
@@ -129,3 +129,4 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
     </div>
   );
 };
+

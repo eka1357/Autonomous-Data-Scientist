@@ -50,3 +50,7 @@ class ProfilingService:
             raise ResourceNotFoundException("Dataset profile not yet available")
 
         return profile
+
+    async def get_profile(self, dataset_id: UUID, user_id: UUID) -> DatasetProfile:
+        return await self.get_dataset_profile(dataset_id, user_id)
+

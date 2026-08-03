@@ -23,9 +23,7 @@ def execute_cleaning_plan(
     if cleaning_plan.get("trim_whitespace", True):
         trimmed_cols = 0
         for col in cleaned_df.select_dtypes(include=["object", "string"]).columns:
-            s = cleaned_df[col].astype(str)
-            trimmed = s.str.strip()
-            cleaned_df[col] = trimmed.where(cleaned_df[col].notna(), None)
+            cleaned_df[col] = cleaned_df[col].apply(lambda v: v.strip() if isinstance(v, str) else v)
             trimmed_cols += 1
         if trimmed_cols > 0:
             applied_operations.append(f"Trimmed leading/trailing whitespace in {trimmed_cols} text column(s)")

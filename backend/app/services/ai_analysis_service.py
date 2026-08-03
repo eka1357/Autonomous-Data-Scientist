@@ -166,3 +166,7 @@ Return JSON with exact structure:
             raise ResourceNotFoundException("Dataset AI analysis not yet available")
 
         return analysis
+
+    async def get_analysis(self, dataset_id: UUID, user_id: UUID) -> DatasetAnalysis:
+        return await self.get_dataset_analysis(dataset_id, user_id)
+

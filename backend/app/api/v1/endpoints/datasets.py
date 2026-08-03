@@ -108,6 +108,7 @@ async def get_dataset_analysis(
 
 
 @router.get("/{dataset_id}/cleaning-plan", status_code=status.HTTP_200_OK)
+@router.get("/{dataset_id}/cleaning", status_code=status.HTTP_200_OK)
 async def get_dataset_cleaning_plan(
     dataset_id: UUID,
     current_user: User = Depends(get_current_user),

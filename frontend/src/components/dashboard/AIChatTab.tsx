@@ -39,7 +39,6 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
     setInput("");
     setLoading(true);
 
-    // Optimistic UI update
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), role: "user", content: userMsg, citations: [] },
@@ -54,7 +53,7 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
         {
           id: Date.now(),
           role: "assistant",
-          content: "Sorry, an error occurred while querying the RAG Assistant.",
+          content: "Sorry, an error occurred while querying the AI Assistant.",
           citations: [],
         },
       ]);
@@ -73,22 +72,22 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
   };
 
   return (
-    <div className="flex flex-col h-[700px] rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl overflow-hidden">
+    <div className="panel-card flex flex-col h-[650px] overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
-            <Sparkles className="w-5 h-5" />
+      <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center text-white">
+            <Sparkles className="w-3.5 h-3.5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">AI Data Science RAG Assistant</h3>
-            <p className="text-xs text-slate-400">Ask natural language questions across all project artifacts & metrics</p>
+            <h3 className="text-sm font-semibold text-slate-900">AI Data Science Assistant</h3>
+            <p className="text-xs text-slate-500">Ask natural language questions across dataset artifacts & metrics</p>
           </div>
         </div>
 
         <button
           onClick={handleClearHistory}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition border border-transparent hover:border-red-500/20"
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-md transition"
         >
           <Trash2 className="w-3.5 h-3.5" />
           Clear Chat
@@ -96,34 +95,34 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
       </div>
 
       {/* Messages Feed */}
-      <div className="flex-1 p-6 overflow-y-auto space-y-4">
+      <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-white">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500">
-            <Bot className="w-12 h-12 text-purple-400/40 mb-3" />
-            <p className="text-sm font-medium text-slate-300">Ask me anything about your dataset!</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm">
-              e.g., "What is the best performing model?", "How many missing values were filled?", or "Explain key EDA findings."
+            <Bot className="w-10 h-10 text-slate-300 mb-2" />
+            <p className="text-sm font-semibold text-slate-900">Ask a question about your dataset</p>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm">
+              e.g., "What is the best performing model?", "How many missing values were filled?", or "Explain key findings."
             </p>
           </div>
         ) : (
           messages.map((m: any, idx: number) => {
             const isUser = m.role === "user";
             return (
-              <div key={idx} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
+              <div key={idx} className={`flex gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}>
                 {!isUser && (
-                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0 h-fit">
-                    <Bot className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <Bot className="w-3.5 h-3.5" />
                   </div>
                 )}
-                <div className={`max-w-2xl p-4 rounded-2xl text-sm ${isUser ? "bg-blue-600 text-white rounded-br-none" : "bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none"}`}>
-                  <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                <div className={`max-w-xl p-3.5 rounded-lg text-xs leading-relaxed ${isUser ? "bg-blue-600 text-white rounded-br-none" : "bg-slate-50 text-slate-800 border border-slate-200 rounded-bl-none"}`}>
+                  <p className="whitespace-pre-wrap">{m.content}</p>
 
                   {/* Citations */}
                   {m.citations && m.citations.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Citations:</span>
+                    <div className="mt-2.5 pt-2.5 border-t border-slate-200 flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Sources:</span>
                       {m.citations.map((c: any, cIdx: number) => (
-                        <span key={cIdx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-300 border border-purple-500/20 font-medium">
+                        <span key={cIdx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-slate-200/80 text-slate-700 font-medium">
                           <FileText className="w-2.5 h-2.5" />
                           {c.source}
                         </span>
@@ -132,8 +131,8 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
                   )}
                 </div>
                 {isUser && (
-                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0 h-fit">
-                    <User className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="w-3.5 h-3.5" />
                   </div>
                 )}
               </div>
@@ -144,27 +143,27 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
       </div>
 
       {/* Input Form */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/80">
+      <div className="p-3.5 border-t border-slate-200 bg-slate-50">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
-          className="flex items-center gap-3"
+          className="flex items-center gap-2"
         >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your question..."
-            className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500"
+            placeholder="Ask a question..."
+            className="flex-1 bg-white border border-slate-300 rounded-md px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="inline-flex items-center gap-2 px-5 py-3 text-xs font-semibold rounded-xl bg-purple-600 hover:bg-purple-500 text-white transition shadow-lg shadow-purple-600/20 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-3.5 h-3.5" />
             Send
           </button>
         </form>
@@ -172,3 +171,4 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
     </div>
   );
 };
+

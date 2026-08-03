@@ -59,14 +59,15 @@ export default function DashboardPage() {
     if (!uploadFile) return;
     try {
       setUploading(true);
-      // Default placeholder project ID for platform demonstration
       const defaultProjectId = "00000000-0000-0000-0000-000000000000";
-      const res = await api.uploadDataset(defaultProjectId, uploadFile);
-      const newId = res.data.id;
-      setDatasetId(newId);
-      setShowUploadModal(false);
-      setUploadFile(null);
-      fetchDatasetDetails(newId);
+      const res: any = await api.uploadDataset(defaultProjectId, uploadFile);
+      const newId = res?.data?.dataset_id || res?.data?.id;
+      if (newId) {
+        setDatasetId(newId);
+        setShowUploadModal(false);
+        setUploadFile(null);
+        fetchDatasetDetails(newId);
+      }
     } catch (err: any) {
       alert("Upload failed: " + (err.message || "Error uploading file"));
     } finally {
@@ -82,11 +83,11 @@ export default function DashboardPage() {
     { id: "automl", label: "AutoML Leaderboard", icon: Cpu },
     { id: "evaluation", label: "Model Evaluation", icon: ShieldCheck },
     { id: "prediction", label: "Inference & Predictions", icon: Send },
-    { id: "chat", label: "AI RAG Assistant", icon: Sparkles },
+    { id: "chat", label: "AI Assistant", icon: Sparkles },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <DashboardHeader
         datasetId={datasetId}
         datasetName={dataset?.filename || "No Dataset Loaded"}
@@ -96,7 +97,7 @@ export default function DashboardPage() {
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
         {/* Nav Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-2 scrollbar-none">
+        <div className="flex items-center gap-1.5 border-b border-slate-200 overflow-x-auto pb-1 scrollbar-none">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
@@ -104,13 +105,13 @@ export default function DashboardPage() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium whitespace-nowrap transition ${
                   active
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900"
+                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5 text-slate-500" />
                 {t.label}
               </button>
             );
@@ -164,10 +165,10 @@ export default function DashboardPage() {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Upload className="w-5 h-5 text-blue-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md p-6 rounded-xl bg-white border border-slate-200 shadow-lg space-y-4">
+            <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+              <Upload className="w-4 h-4 text-blue-600" />
               Upload Dataset (CSV)
             </h3>
             <form onSubmit={handleUploadSubmit} className="space-y-4">
@@ -175,23 +176,23 @@ export default function DashboardPage() {
                 type="file"
                 accept=".csv,.xlsx"
                 onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+                className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border file:border-slate-300 file:text-xs file:font-medium file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 cursor-pointer"
                 required
               />
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !uploadFile}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 transition"
                 >
-                  {uploading ? "Uploading..." : "Upload & Process"}
+                  {uploading ? "Uploading..." : "Upload Dataset"}
                 </button>
               </div>
             </form>
@@ -201,3 +202,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

@@ -1,4 +1,5 @@
 import os
+import uuid
 from typing import Any
 from uuid import UUID
 import joblib
@@ -76,7 +77,7 @@ class PredictionService:
         pred_dir = os.path.join(base_dir, "predictions", str(dataset_id))
         os.makedirs(pred_dir, exist_ok=True)
 
-        history_id_temp = str(UUID(int=os.urandom(16).hex[:32], version=4))
+        history_id_temp = str(uuid.uuid4())
         result_file = os.path.join(pred_dir, f"prediction_{history_id_temp}.csv")
         result_df.to_csv(result_file, index=False)
 

@@ -151,20 +151,34 @@ def execute_preprocessing_plan(
     y = ml_df[target_col].copy() if target_col and target_col in ml_df.columns else None
 
     if len(X) > 1:
-        if y is not None:
-            stratify_y = None
-            # Stratify if classification target with enough class samples
-            if pd.api.types.is_integer_dtype(y) or y.nunique() <= 20:
-                class_counts = y.value_counts()
-                if (class_counts >= 2).all() and len(class_counts) > 1:
-                    stratify_y = y
+        try:
+            if y is not None:
+                stratify_y = None
+                if pd.api.types.is_integer_dtype(y) or y.nunique() <= 20:
+                    class_counts = y.value_counts()
+                    if (class_counts >= 2).all() and len(class_counts) > 1:
+                        stratify_y = y
 
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=test_size, random_state=random_state, stratify=stratify_y
-            )
-        else:
-            X_train, X_test = train_test_split(X, test_size=test_size, random_state=random_state)
-            y_train, y_test = None, None
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=test_size, random_state=random_state, stratify=stratify_y
+                )
+            else:
+                X_train, X_test = train_test_split(X, test_size=test_size, random_state=random_state)
+                y_train, y_test = None, None
+        except Exception:
+            # Fallback without stratification
+            try:
+                if y is not None:
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y, test_size=test_size, random_state=random_state, stratify=None
+                    )
+                else:
+                    X_train, X_test = train_test_split(X, test_size=test_size, random_state=random_state)
+                    y_train, y_test = None, None
+            except Exception:
+                X_train, X_test = X.copy(), X.copy()
+                y_train = y.copy() if y is not None else None
+                y_test = y.copy() if y is not None else None
     else:
         X_train, X_test = X.copy(), X.copy()
         y_train = y.copy() if y is not None else None
