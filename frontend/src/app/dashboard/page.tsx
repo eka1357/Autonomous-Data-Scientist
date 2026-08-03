@@ -52,6 +52,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (datasetId) {
       fetchDatasetDetails(datasetId);
+    } else {
+      setShowUploadModal(true);
     }
   }, [datasetId]);
 

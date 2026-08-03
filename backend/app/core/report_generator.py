@@ -1,3 +1,4 @@
+import base64
 import os
 from typing import Any
 from jinja2 import Template
@@ -18,7 +19,7 @@ HTML_REPORT_TEMPLATE = """<!DOCTYPE html>
     th { background: #334155; color: #38bdf8; }
     .badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 9999px; font-size: 0.85em; font-weight: bold; }
     .insights-list { background: #1e1b4b; border-left: 4px solid #6366f1; padding: 15px 20px; border-radius: 4px; margin-top: 15px; }
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
     .chart-card { background: #0f172a; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #334155; }
     .chart-card img { max-width: 100%; height: auto; border-radius: 6px; }
   </style>
@@ -127,17 +128,17 @@ HTML_REPORT_TEMPLATE = """<!DOCTYPE html>
     {% if charts %}
     <h2>5. Visualizations & Distributions</h2>
     <div class="charts-grid">
-      {% for name, rel_path in charts.items() %}
+      {% for name, src_url in charts.items() %}
       <div class="chart-card">
         <h4>{{ name }}</h4>
-        <img src="{{ charts_base_url }}/{{ rel_path }}" alt="{{ name }}" />
+        <img src="{{ src_url }}" alt="{{ name }}" />
       </div>
       {% endfor %}
     </div>
     {% endif %}
 
     <footer style="margin-top: 50px; text-align: center; color: #64748b; font-size: 0.85em;">
-      Report generated automatically by AutoDS AI Engine.
+      Report generated automatically by AutoDS AI Engine. Fully self-contained export.
     </footer>
   </div>
 </body>
@@ -154,24 +155,46 @@ def generate_html_eda_report(
     insights: dict[str, Any],
     generated_at: str,
     output_report_path: str,
-    charts_base_url: str = "../charts",
+    charts_dir: str | None = None,
 ) -> str:
-    """Renders Jinja2 template and writes eda_report.html to output_report_path."""
+    """Renders Jinja2 template with embedded base64 images and writes self-contained eda_report.html."""
     os.makedirs(os.path.dirname(output_report_path), exist_ok=True)
-    template = Template(HTML_REPORT_TEMPLATE)
 
-    # Adjust relative chart URLs for html view
-    charts_url = f"../charts/{dataset_id}"
+    # Convert charts to base64 embedded Data URIs for self-contained HTML rendering
+    embedded_charts: dict[str, str] = {}
+    if charts:
+        for name, file_or_path in charts.items():
+            possible_paths = []
+            if charts_dir:
+                possible_paths.append(os.path.join(charts_dir, file_or_path))
+            possible_paths.append(file_or_path)
+
+            found_path = None
+            for p in possible_paths:
+                if os.path.exists(p) and os.path.isfile(p):
+                    found_path = p
+                    break
+
+            if found_path:
+                try:
+                    with open(found_path, "rb") as img_f:
+                        b64_data = base64.b64encode(img_f.read()).decode("utf-8")
+                        embedded_charts[name] = f"data:image/png;base64,{b64_data}"
+                except Exception:
+                    embedded_charts[name] = file_or_path
+            else:
+                embedded_charts[name] = file_or_path
+
+    template = Template(HTML_REPORT_TEMPLATE)
 
     html_content = template.render(
         dataset_id=dataset_id,
         summary=summary,
         statistics=statistics,
         outliers=outliers,
-        charts=charts,
+        charts=embedded_charts,
         insights=insights,
         generated_at=generated_at,
-        charts_base_url=charts_url,
     )
 
     with open(output_report_path, "w", encoding="utf-8") as f:

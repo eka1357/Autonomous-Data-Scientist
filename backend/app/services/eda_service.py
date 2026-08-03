@@ -159,6 +159,7 @@ Return JSON matching exact structure:
             insights=insights,
             generated_at=now_str,
             output_report_path=report_path,
+            charts_dir=charts_dir,
         )
 
         # 5. Save Record to DB
