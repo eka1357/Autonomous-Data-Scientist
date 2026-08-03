@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Cpu, Download, Play, Trophy } from "lucide-react";
+import { Cpu, Download, Play, Trophy, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface AutoMLTabProps {
@@ -12,6 +12,7 @@ interface AutoMLTabProps {
 
 export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const leaderboard = models?.leaderboard || [];
   const bestAlgorithm = models?.best_algorithm || "None";
@@ -20,12 +21,17 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
   const primaryMetric = models?.primary_metric || "score";
 
   const handleRunAutoML = async () => {
+    if (!datasetId) {
+      setErrorMessage("Please upload a dataset first.");
+      return;
+    }
     try {
       setLoading(true);
+      setErrorMessage(null);
       await api.trainAutoML(datasetId);
       onRunSuccess();
-    } catch (err) {
-      console.error("AutoML training error:", err);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to execute AutoML training.");
     } finally {
       setLoading(false);
     }
@@ -33,6 +39,19 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
 
   return (
     <div className="space-y-6">
+      {/* Inline Error Banner */}
+      {errorMessage && (
+        <div className="p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between gap-3 text-xs text-red-700 font-medium">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700 underline text-xs">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Header & Run AutoML */}
       <div className="panel-card p-5 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -48,14 +67,14 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
         <div className="flex items-center gap-2">
           <button
             onClick={handleRunAutoML}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50"
+            disabled={loading || !datasetId}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5" />
             {loading ? "Training Models..." : "Train AutoML Suite"}
           </button>
 
-          {models?.model_path && (
+          {datasetId && models?.model_path && (
             <a
               href={api.getModelDownloadUrl(datasetId)}
               target="_blank"
@@ -102,26 +121,34 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {leaderboard.map((item: any, idx: number) => {
-                const isWinner = idx === 0 && item.status === "completed";
-                return (
-                  <tr key={idx} className={`hover:bg-slate-50 transition ${isWinner ? "bg-amber-50/50" : ""}`}>
-                    <td className="px-4 py-2.5 font-bold text-slate-900">
-                      {isWinner ? <Trophy className="w-3.5 h-3.5 text-amber-600 inline mr-1" /> : `#${idx + 1}`}
-                    </td>
-                    <td className="px-4 py-2.5 font-semibold text-slate-900">{item.algorithm}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.status === "completed" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 font-mono font-semibold text-emerald-700">{item.score}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
-                      {item.metrics ? JSON.stringify(item.metrics) : item.error || "N/A"}
-                    </td>
-                  </tr>
-                );
-              })}
+              {leaderboard.length > 0 ? (
+                leaderboard.map((item: any, idx: number) => {
+                  const isWinner = idx === 0 && item.status === "completed";
+                  return (
+                    <tr key={idx} className={`hover:bg-slate-50 transition ${isWinner ? "bg-amber-50/50" : ""}`}>
+                      <td className="px-4 py-2.5 font-bold text-slate-900">
+                        {isWinner ? <Trophy className="w-3.5 h-3.5 text-amber-600 inline mr-1" /> : `#${idx + 1}`}
+                      </td>
+                      <td className="px-4 py-2.5 font-semibold text-slate-900">{item.algorithm}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.status === "completed" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 font-mono font-semibold text-emerald-700">{item.score}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
+                        {item.metrics ? JSON.stringify(item.metrics) : item.error || "N/A"}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                    No trained models available yet. Click "Train AutoML Suite" to run.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -129,4 +156,3 @@ export const AutoMLTab: React.FC<AutoMLTabProps> = ({ datasetId, models, onRunSu
     </div>
   );
 };
-

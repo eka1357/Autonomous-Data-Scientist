@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { Database, FileText, Download, CheckCircle2, Clock, Bot, AlertCircle } from "lucide-react";
-import { api } from "@/lib/api";
+import { Database, CheckCircle2, Clock, Bot, AlertCircle } from "lucide-react";
 
 interface DashboardHeaderProps {
   datasetId: string;
@@ -68,30 +67,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         ) : (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-400">
             <span>Awaiting Upload</span>
-          </div>
-        )}
-
-        {/* Report Download Buttons */}
-        {datasetId && isCompleted && (
-          <div className="flex items-center gap-2">
-            <a
-              href={api.getEDAReportUrl(datasetId)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition"
-            >
-              <FileText className="w-3.5 h-3.5 text-slate-500" />
-              EDA Report
-            </a>
-            <a
-              href={api.getEvaluationReportUrl(datasetId)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
-              Eval Report
-            </a>
           </div>
         )}
 

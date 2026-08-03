@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Cpu, Download, Play, CheckCircle2 } from "lucide-react";
+import { Cpu, Download, Play, CheckCircle2, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface PreprocessingTabProps {
@@ -16,18 +16,24 @@ export const PreprocessingTab: React.FC<PreprocessingTabProps> = ({
   onRunSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const plan = preprocessing?.preprocessing_plan || {};
   const summary = preprocessing?.execution_summary || {};
   const ops = summary.operations_applied || [];
 
   const handleRunPreprocessing = async () => {
+    if (!datasetId) {
+      setErrorMessage("Please upload a dataset first.");
+      return;
+    }
     try {
       setLoading(true);
+      setErrorMessage(null);
       await api.preprocessDataset(datasetId);
       onRunSuccess();
-    } catch (err) {
-      console.error("Preprocessing error:", err);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to execute preprocessing on dataset.");
     } finally {
       setLoading(false);
     }
@@ -35,6 +41,19 @@ export const PreprocessingTab: React.FC<PreprocessingTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Inline Error Banner */}
+      {errorMessage && (
+        <div className="p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between gap-3 text-xs text-red-700 font-medium">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700 underline text-xs">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Header card with action & download */}
       <div className="panel-card p-5 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -50,14 +69,14 @@ export const PreprocessingTab: React.FC<PreprocessingTabProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleRunPreprocessing}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50"
+            disabled={loading || !datasetId}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5" />
             {loading ? "Preprocessing..." : "Run Preprocessing"}
           </button>
 
-          {preprocessing?.ml_ready_path && (
+          {datasetId && preprocessing?.ml_ready_path && (
             <a
               href={api.getMLReadyUrl(datasetId)}
               target="_blank"
@@ -106,4 +125,3 @@ export const PreprocessingTab: React.FC<PreprocessingTabProps> = ({
     </div>
   );
 };
-

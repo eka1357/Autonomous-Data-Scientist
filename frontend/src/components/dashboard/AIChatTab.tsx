@@ -15,11 +15,12 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const fetchHistory = async () => {
+    if (!datasetId) return;
     try {
       const res = await api.getChatHistory(datasetId);
       setMessages(res.data || []);
-    } catch (err) {
-      console.error("Chat history fetch error:", err);
+    } catch {
+      setMessages([]);
     }
   };
 
@@ -34,7 +35,7 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !datasetId) return;
     const userMsg = input.trim();
     setInput("");
     setLoading(true);
@@ -53,7 +54,7 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
         {
           id: Date.now(),
           role: "assistant",
-          content: "Sorry, an error occurred while querying the AI Assistant.",
+          content: err.message || "Sorry, an error occurred while querying the AI Assistant.",
           citations: [],
         },
       ]);
@@ -63,11 +64,12 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
   };
 
   const handleClearHistory = async () => {
+    if (!datasetId) return;
     try {
       await api.clearChatHistory(datasetId);
       setMessages([]);
-    } catch (err) {
-      console.error("Clear chat error:", err);
+    } catch {
+      setMessages([]);
     }
   };
 
@@ -85,18 +87,28 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
           </div>
         </div>
 
-        <button
-          onClick={handleClearHistory}
-          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-md transition"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          Clear Chat
-        </button>
+        {datasetId && (
+          <button
+            onClick={handleClearHistory}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-md transition"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Clear Chat
+          </button>
+        )}
       </div>
 
       {/* Messages Feed */}
       <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-white">
-        {messages.length === 0 ? (
+        {!datasetId ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500">
+            <Bot className="w-10 h-10 text-slate-300 mb-2" />
+            <p className="text-sm font-semibold text-slate-900">No Dataset Loaded</p>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm">
+              Please upload a dataset to start chatting with the AI Data Science Assistant.
+            </p>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500">
             <Bot className="w-10 h-10 text-slate-300 mb-2" />
             <p className="text-sm font-semibold text-slate-900">Ask a question about your dataset</p>
@@ -155,12 +167,13 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question..."
-            className="flex-1 bg-white border border-slate-300 rounded-md px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+            disabled={!datasetId || loading}
+            placeholder={datasetId ? "Ask a question..." : "Upload a dataset first..."}
+            className="flex-1 bg-white border border-slate-300 rounded-md px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
           />
           <button
             type="submit"
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || !datasetId}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
@@ -171,4 +184,3 @@ export const AIChatTab: React.FC<AIChatTabProps> = ({ datasetId }) => {
     </div>
   );
 };
-
